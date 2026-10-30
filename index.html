@@ -50,6 +50,19 @@ button.armed{background:var(--bad);color:#fff}
 .chips button{padding:8px 0;flex:1;font-family:var(--mono)}
 .chips button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
 #status{white-space:pre-wrap;font-size:14px;margin:0;min-height:3em}
+.lights{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;text-align:center}
+.light{border:1px solid var(--line);border-radius:12px;padding:8px 2px;font-size:12px;color:var(--muted)}
+.light b{display:block;font-size:15px;color:var(--fg);margin-bottom:4px}
+.dot{width:22px;height:22px;border-radius:50%;margin:0 auto 4px;border:1px solid var(--line);background:var(--bg)}
+.dot.red{background:#d64545}.dot.yellow{background:#e8b93a}.dot.green{background:#2fa866}.dot.white{background:#ffffff;box-shadow:0 0 10px #fff}
+.dot.none{background:repeating-linear-gradient(45deg,var(--line),var(--line) 3px,transparent 3px,transparent 6px)}
+.lines{display:flex;flex-direction:column;gap:6px}
+.ln{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid var(--line);padding-top:6px}
+.ln .px{font:700 17px var(--mono);direction:ltr}
+.badge{font-size:12px;font-weight:700;padding:3px 9px;border-radius:99px;border:1px solid var(--line)}
+.badge.hold{background:var(--bad);color:#fff;border-color:var(--bad)}
+.badge.scalp{color:var(--ok);border-color:var(--ok)}
+.badge.wait{color:var(--muted)}
 #feed{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow:auto}
 #feed li{border-top:1px solid var(--line);padding-top:8px;white-space:pre-wrap;overflow-wrap:anywhere}
 #feed time{font:12px var(--mono);color:var(--muted);margin-inline-start:6px}
@@ -57,6 +70,13 @@ button.armed{background:var(--bad);color:#fff}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;max-width:90vw}
 .hint{font-size:12px;color:var(--muted);margin:6px 0 0}
 textarea{width:100%;font:13px var(--mono);padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);direction:ltr;min-height:70px}
+#modes button,#entries button{font-family:var(--sans)}
+.ln .dot{width:14px;height:14px;margin:0;flex:0 0 14px}
+.ln .acts{display:flex;gap:4px}
+.ln .acts button{padding:6px 9px;font-size:13px}
+.switch{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0}
+.switch button[aria-pressed="true"]{background:var(--ok);color:#fff;border-color:var(--ok)}
+button:disabled{opacity:.45}
 @media (prefers-reduced-motion:reduce){button:active{transform:none}}
 </style>
 </head>
@@ -76,11 +96,31 @@ textarea{width:100%;font:13px var(--mono);padding:10px;border-radius:10px;border
   </section>
 
   <div id="app" class="stack" hidden>
+  <section class="card" id="v2card">
+    <h2>قراءة السوق (سكانر v2) <span id="v2age" style="float:left;font-weight:400"></span></h2>
+    <div class="lights" id="lights"></div>
+    <p class="hint" id="v2dir">الاتجاه الحالي: –</p>
+    <p class="hint">الألوان: 🔴 ضعيف · 🟡 عادي · 🟢 قوي · ⚪ انفجار، نسبة لحركة آخر شهر. 12 و24 ساعة لسا ما نجحوا بالفحص.</p>
+    <h2 style="margin-top:12px">لوحة الخطوط</h2>
+    <div class="lines" id="v2lines"><p class="hint">ما في خطوط آخر 24 ساعة</p></div>
+    <p class="hint">🟢 جديد والسوق قوي (6 س) · 🟡 انلمس قبل أو السوق عادي · 🔴 خلص وقته أو انستعمل أو انلغى. الخط الاحتياطي طلع مش أضعف من الرئيسي. مكان الخط لحاله كان قريب من العشوائي بالبحث القديم.</p>
+  </section>
+
   <section class="card">
-    <h2>الخطين</h2>
+    <h2>خطوط البوت</h2>
     <div class="row">
-      <div><label for="up">فوق</label><input id="up" inputmode="decimal" placeholder="4068.45"></div>
-      <div><label for="dn">تحت</label><input id="dn" inputmode="decimal" placeholder="4034.13"></div>
+      <div><label for="up">خط</label><input id="up" inputmode="decimal" placeholder="4068.45"></div>
+      <div><label for="dn">خط تاني (اختياري)</label><input id="dn" inputmode="decimal" placeholder="4034.13"></div>
+    </div>
+    <label style="margin-top:10px">البوكس</label>
+    <div class="chips" id="modes">
+      <button aria-pressed="true" data-mode="rej">رفض (ذيل الشمعة)</button>
+      <button aria-pressed="false" data-mode="full">شمعة كاملة</button>
+    </div>
+    <label style="margin-top:10px">الدخول</label>
+    <div class="chips" id="entries">
+      <button aria-pressed="true" data-entry="touch">لمس الحافة</button>
+      <button aria-pressed="false" data-entry="close">إغلاق برّا</button>
     </div>
     <label style="margin-top:10px">لوت البوكس</label>
     <div class="chips" id="lots">
@@ -88,8 +128,22 @@ textarea{width:100%;font:13px var(--mono);padding:10px;border-radius:10px;border
       <button aria-pressed="false" data-lot="0.02">0.02</button>
       <button aria-pressed="false" data-lot="0.03">0.03</button>
     </div>
-    <button class="primary" id="sendLines" style="width:100%;margin-top:10px">ابعت الخطين</button>
-    <p class="hint">أول شمعة M1 بتلمس خط ← بوكس عليها لما تسكّر ← أول إغلاق برّا بيدخل.</p>
+    <button class="primary" id="sendLines" style="width:100%;margin-top:10px">فعّل الخطوط</button>
+    <p class="hint">الخط سعر بس، بأي جهة من السعر، وكل خط لحاله. رفض: بس الشمعة اللي بترفض عند الخط بتعمل بوكس، والبوكس هو ذيلها؛ اللمسة بدون رفض ما بتعمل إشي والخط بيضل مستني.</p>
+    <div class="lines" id="eaLines" style="margin-top:10px"></div>
+  </section>
+
+  <section class="card">
+    <h2>إعدادات البوت</h2>
+    <div class="row" style="align-items:end">
+      <div><label for="capD">حد اليوم $</label><input id="capD" inputmode="decimal"></div>
+      <div><label for="capW">حد الأسبوع $</label><input id="capW" inputmode="decimal"></div>
+      <button id="sendCaps" style="flex:0 0 80px">حفظ</button>
+    </div>
+    <p class="hint" id="capHint">بتقدر تنزّل الحد أو ترجّعه لحد الرقم المكتوب على الشارت.</p>
+    <div class="switch"><span>AUTO LINE (السكانر بيفعّل الخطوط القوية لحاله)</span><button id="autoLine" aria-pressed="false" data-confirm="1">OFF</button></div>
+    <div class="switch"><span>AUTOPILOT للخروج</span><button id="autoPilot" disabled>مقفول</button></div>
+    <p class="hint">الخروج الأوتوماتيكي مقفول: ولا طريقة خروج فاتت الباقي لما فحصناها على التِكات (بحث B). الهدف المقترح وصف بس، مش وعد.</p>
   </section>
 
   <section class="card">
@@ -125,7 +179,7 @@ textarea{width:100%;font:13px var(--mono);padding:10px;border-radius:10px;border
 <div class="toast" id="toast" hidden></div>
 <script>
 const NTFY = "https://ntfy.sh";
-let cfg = null, lot = "0.01", es = null, armed = null;
+let cfg = null, lot = "0.01", mode = "rej", entry = "touch", es = null, armed = null, eaSnap = null, lastV2 = null;
 const $ = id => document.getElementById(id);
 
 function load(){ try { cfg = JSON.parse(localStorage.getItem("boxcfg") || "null"); } catch(e){ cfg = null; } }
@@ -139,8 +193,84 @@ async function send(text){
   }catch(e){ toast("ما في نت؟ ما انبعت"); }
 }
 
+const NAMES={red:"ضعيف",yellow:"عادي",green:"قوي",white:"انفجار",none:"ما في قراءة"};
+const LST={armed:"جاهز بالبوت",paused:"موقوف",used:"عمل بوكس",cancelled:"ملغي",expired:"خلص وقته"};
+function btn(text,run,cls){ const b=document.createElement("button"); b.textContent=text; if(cls) b.className=cls; b.onclick=run; return b; }
+function eaLineAt(px){ return eaSnap ? eaSnap.lines.find(x=>Math.abs(x.px-px)<0.005 && x.st!=="cancelled") : null; }
+function lineActs(x){
+  const a=document.createElement("div"); a.className="acts";
+  if(x.st==="armed") a.append(btn("وقّف",()=>send(`line pause ${x.id}`)));
+  if(x.st==="paused") a.append(btn("فعّل",()=>send(`line arm ${x.id}`)));
+  if(x.st==="armed"||x.st==="paused") a.append(btn("الغي",()=>send(`line cancel ${x.id}`),"danger"));
+  return a;
+}
+function renderEA(){
+  if(!eaSnap) return;
+  const box=$("eaLines"); box.textContent="";
+  eaSnap.lines.slice().reverse().forEach(x=>{
+    const r=document.createElement("div"); r.className="ln";
+    const left=document.createElement("div");
+    const px=document.createElement("div"); px.className="px"; px.textContent=x.px;
+    const sub=document.createElement("div"); sub.className="hint"; sub.style.margin="0";
+    sub.textContent=`خط ${x.id} · ${LST[x.st]||x.st} · ${x.m==="r"?"رفض":"كاملة"} · ${x.t?"لمس":"إغلاق"} · لوت ${x.lot}${x.src==="a"?" · أوتو":""}${x.box?" · بوكس "+x.box:""}`;
+    left.append(px,sub); r.append(left,lineActs(x)); box.append(r);
+  });
+  const c=eaSnap.caps; $("capD").placeholder=c[0]; $("capW").placeholder=c[1];
+  $("capHint").textContent=`الحد هلأ ${c[0]}/${c[1]}$ · أقصى من الشارت ${c[2]}/${c[3]}$ · لوت أقصى ${eaSnap.lot_cap}`;
+  const on=!!eaSnap.settings.auto_line; $("autoLine").setAttribute("aria-pressed",on?"true":"false"); $("autoLine").textContent=on?"ON":"OFF";
+  if(lastV2) renderV2(lastV2);
+}
+function renderV2(st){
+  lastV2=st;
+  const L=$("lights"); L.textContent="";
+  ["1h","3h","6h","12h","24h"].forEach(k=>{
+    const c=(st.light&&st.light[k]&&st.light[k].colour)||"none";
+    const d=document.createElement("div"); d.className="light";
+    const b=document.createElement("b"); b.textContent=k.replace("h"," س");
+    const dot=document.createElement("div"); dot.className="dot "+c;
+    d.append(b,dot,document.createTextNode(NAMES[c]||c)); L.append(d);
+  });
+  const dir={up:"صاعد (H1 وH4)",down:"هابط (H1 وH4)",mixed:"مختلط"}[st.direction_now&&st.direction_now.h1_h4]||"–";
+  $("v2dir").textContent="الاتجاه الحالي: "+dir+" · وصف لهلأ، مش توقّع"+(st.normal_3h_range?" · حركة 3 ساعات العادية: "+st.normal_3h_range+"$":"");
+  $("v2age").textContent=(st.ts_utc||"").slice(11,16)+" UTC"+((st.warnings||[]).some(w=>w.startsWith("gold"))?" ⚠️":"");
+  const box=$("v2lines"); box.textContent="";
+  (st.lines||[]).slice().reverse().forEach(x=>{
+    const r=document.createElement("div"); r.className="ln";
+    const left=document.createElement("div");
+    const px=document.createElement("div"); px.className="px"; px.textContent=x.line;
+    const ea=eaLineAt(x.line);
+    let lt=x.light||"yellow";
+    if(ea && (ea.st==="used"||ea.st==="expired")) lt="red";
+    const dot=document.createElement("div"); dot.className="dot "+lt;
+    const sub=document.createElement("div"); sub.className="hint"; sub.style.margin="0";
+    sub.textContent=(x.k==="B"?"احتياطي":"رئيسي")+" · "+(x.side==="above"?"فوق":"تحت")+" · "+(x.declared_utc||"").slice(11,16)+" UTC"
+      +(x.status==="touched"?" · انلمس":x.status==="ended"?" · خلص وقته":"")
+      +(x.near_target?" · هدف قريب "+x.near_target:"")+(x.tp_usd?" · هدف مقترح "+x.tp_usd+"$":"")
+      +(ea?" · "+(LST[ea.st]||ea.st):"");
+    left.append(px,sub);
+    const bd=document.createElement("span");
+    if(x.call){ bd.className="badge "+(x.call==="HOLD"?"hold":"scalp"); bd.textContent=x.call; }
+    else { bd.className="badge wait"; bd.textContent="مستني"; }
+    let acts;
+    if(ea) acts=lineActs(ea);
+    else if(x.status!=="ended"){ acts=document.createElement("div"); acts.className="acts"; acts.append(btn("فعّل",()=>send(`line ${x.line} lot ${lot} ${mode} ${entry}`))); }
+    r.prepend(dot); r.append(left,bd); if(acts) r.append(acts); box.append(r);
+  });
+  if(!box.children.length){ const p=document.createElement("p"); p.className="hint"; p.textContent="ما في خطوط آخر 24 ساعة"; box.append(p); }
+}
+let es2=null;
+async function connectV2(){
+  if(!cfg.v) { $("v2card").hidden=true; return; }
+  $("v2card").hidden=false;
+  const take=m=>{ if(m&&m.event==="message"){ try{ renderV2(JSON.parse(m.message)); }catch(e){} } };
+  try{ const r=await fetch(`${NTFY}/${cfg.v}/json?poll=1&since=2h`); (await r.text()).split("\n").filter(Boolean).forEach(l=>{ try{ take(JSON.parse(l)); }catch(e){} }); }catch(e){}
+  if(es2) es2.close();
+  es2=new EventSource(`${NTFY}/${cfg.v}/sse`); es2.onmessage=e=>{ try{ take(JSON.parse(e.data)); }catch(x){} };
+}
+
 function addFeed(m){
   if(!m || m.event!=="message") return;
+  if(m.title==="STATE"){ try{ eaSnap=JSON.parse(m.message); renderEA(); }catch(e){} return; }
   if((m.title||"").includes("📊")) $("status").textContent = m.message;
   const li=document.createElement("li");
   const t=new Date(m.time*1000).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
@@ -176,13 +306,13 @@ function start(){
   load();
   $("setup").hidden = !!cfg;
   $("app").hidden = !cfg;
-  if(cfg) connect();
+  if(cfg){ connect(); connectV2(); }
 }
 
 $("saveCode").onclick = ()=>{
   const parts = $("code").value.trim().split("|").map(s=>s.trim());
-  if(parts.length!==3 || !parts[0] || !parts[1] || !/^\d{4}$/.test(parts[2])){ toast("الكود مش كامل"); return; }
-  try{ localStorage.setItem("boxcfg", JSON.stringify({c:parts[0],a:parts[1],p:parts[2]})); }catch(e){ toast("التلفون ما سمح بالحفظ"); return; }
+  if((parts.length!==3 && parts.length!==4) || !parts[0] || !parts[1] || !/^\d{4}$/.test(parts[2])){ toast("الكود مش كامل"); return; }
+  try{ localStorage.setItem("boxcfg", JSON.stringify({c:parts[0],a:parts[1],p:parts[2],v:parts[3]||""})); }catch(e){ toast("التلفون ما سمح بالحفظ"); return; }
   start();
 };
 $("reset").onclick = ()=>{ try{ localStorage.removeItem("boxcfg"); }catch(e){} cfg=null; if(es) es.close(); start(); };
@@ -196,8 +326,15 @@ $("sendLines").onclick = ()=>{
   const up=$("up").value.trim().replace(",","."), dn=$("dn").value.trim().replace(",",".");
   const ok=v=>v==="" || /^\d+(\.\d+)?$/.test(v);
   if((!up && !dn) || !ok(up) || !ok(dn)){ toast("اكتب خط أو خطين صح"); return; }
-  send(`line ${[up,dn].filter(Boolean).join(" ")} lot ${lot}`);
+  send(`line ${[up,dn].filter(Boolean).join(" ")} lot ${lot} ${mode} ${entry}`);
 };
+function chips(id,attr,set){ $(id).onclick=e=>{ const b=e.target.closest("button"); if(!b) return; set(b.dataset[attr]);
+  [...$(id).children].forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false")); }; }
+chips("modes","mode",v=>mode=v); chips("entries","entry",v=>entry=v);
+$("sendCaps").onclick=()=>{ const d=$("capD").value.trim(), w=$("capW").value.trim();
+  if(!/^\d+(\.\d+)?$/.test(d)||!/^\d+(\.\d+)?$/.test(w)){ toast("اكتب الحدين"); return; } send(`caps ${d} ${w}`); };
+$("autoLine").onclick=()=>{ const b=$("autoLine"); const on=b.getAttribute("aria-pressed")==="true";
+  confirmTap(b,()=>send(`auto ${on?"off":"on"}`)); };
 document.querySelectorAll("[data-cmd]").forEach(b=> b.onclick=()=>confirmTap(b,()=>send(b.dataset.cmd)));
 document.querySelectorAll("[data-box]").forEach(b=> b.onclick=()=>{
   const n=$("boxNo").value.trim();
