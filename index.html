@@ -131,6 +131,7 @@ details summary{cursor:pointer;font-weight:700;font-size:14px}
     <div class="lights" id="lights"></div>
     <p class="hint" id="v2dir">الاتجاه الحالي: –</p>
     <div id="v2gate" class="gate" hidden></div>
+    <p class="hint" id="v2regime" style="font-weight:600" hidden></p>
     <p class="hint">🔴 ضعيف · 🟡 عادي · 🟢 قوي · ⚪ انفجار، نسبة لحركة آخر شهر. 12 و24 ساعة ما نجحوا بالفحص (ما في قراءة).</p>
   </section>
 
@@ -166,11 +167,13 @@ details summary{cursor:pointer;font-weight:700;font-size:14px}
       <h3>TP Autopilot: الخروج</h3>
       <div class="chips" id="apTp">
         <button aria-pressed="true" data-tp="off">OFF</button>
+        <button aria-pressed="false" data-tp="smart">SMART</button>
         <button aria-pressed="false" data-tp="close75">CLOSE_75</button>
         <button aria-pressed="false" data-tp="lock100">LOCK_100</button>
       </div>
       <p class="hint">بيتطبّق على البوكسات اللي بيفعّلها الأوتوبايلوت. البوكس بيضل يقلب بقانونه، والخروج بيسكّر البوكس كله على ربح بس.</p>
-      <div class="tested"><b>CLOSE_75</b> (يسكّر لما مجموع البوكس +75$ خلال 24 س): أحسن خروج من 24 قاعدة بالنص التاني 2025 (بحث 21)، ما انفحص لحاله بفترات تانية.<br>
+      <div class="tested"><b>SMART</b> (الخروج الذكي): وقت فتح البوكس بيقرا حالة السوق. إذا التذبذب قوي بيخلّي البوكس يركض بتريل ATR على مجموعه بعد +15$، وإذا هادي بيسكّر على +75$. بالفحص (بحث 23): +80% بالنص الأول 2026 وما كان ولا مرة أسوأ، بس <b>مش مثبت</b>.<br>
+      <b>CLOSE_75</b> (يسكّر لما مجموع البوكس +75$ خلال 24 س): أحسن خروج من 24 قاعدة بالنص التاني 2025 (بحث 21)، ما انفحص لحاله بفترات تانية.<br>
       <b>LOCK_100</b> (بعد +100$ بيقفل ربح وبيلحق): حساب بحدود البوت ربح بالتلات فترات على 0.01، +2,744$ بـ 15 شهر، بس نزل لـ −1,194$ (بحث 17)، وعلى 252$ انمسح بفترة (بحث 21).<br>
       موديلات الخروج المتعلّمة فشلت (بحوث 19 و21). <b>ولا واحد مثبت.</b></div>
     </div>
@@ -213,8 +216,9 @@ details summary{cursor:pointer;font-weight:700;font-size:14px}
     </div>
     <label style="margin-top:10px">لعبة البوكس (البوكس هو الصفقة)</label>
     <div class="chips" id="games">
+      <button aria-pressed="true" data-game="smart">ذكي</button>
       <button aria-pressed="false" data-game="close75">سكّر 75</button>
-      <button aria-pressed="true" data-game="lock100">قفل 100</button>
+      <button aria-pressed="false" data-game="lock100">قفل 100</button>
       <button aria-pressed="false" data-game="gameoff">بدون</button>
     </div>
     <label style="margin-top:10px">لوت</label>
@@ -268,7 +272,7 @@ details summary{cursor:pointer;font-weight:700;font-size:14px}
 <script>
 const NTFY = "https://ntfy.sh";
 let cfg = null, es = null, es2 = null, armed = null, eaSnap = null, lastV2 = null;
-let form = {mode:"full", entry:"close", game:"lock100", lot:"0.01"};
+let form = {mode:"full", entry:"close", game:"smart", lot:"0.01"};
 const $ = id => document.getElementById(id);
 const NAMES = {red:"ضعيف",yellow:"عادي",green:"قوي",white:"انفجار",none:"ما في قراءة"};
 const LST = {armed:"شغّال",paused:"موقوف",used:"عمل بوكس",cancelled:"ملغي",expired:"خلص وقته"};
@@ -294,7 +298,11 @@ function confirmTap(b, run){
 function pressed(id, attr, val){ [...$(id).children].forEach(x=>x.setAttribute("aria-pressed", x.dataset[attr]===String(val) ? "true":"false")); }
 function boardAt(px){ return lastV2 ? (lastV2.lines||[]).find(x=>Math.abs(x.line-px)<0.005) : null; }
 function eaAt(px){ return eaSnap ? eaSnap.lines.find(x=>Math.abs(x.px-px)<0.005 && x.st!=="cancelled") : null; }
-function targetText(x){ return x.bt>0 ? (x.bl ? `قفل ${x.bt}$ ويلحق` : `يسكّر على +${x.bt}$`) : "بدون هدف بوكس"; }
+function targetText(x){
+  if(x.sm<0) return "خروج ذكي (بيقرّر وقت فتح البوكس)";
+  if(x.sm>0) return `ذكي: تريل ${x.sm}×ATR على المجموع بعد +15$`;
+  return x.bt>0 ? (x.bl ? `قفل ${x.bt}$ ويلحق` : `يسكّر على +${x.bt}$`) : "بدون هدف بوكس";
+}
 
 function renderV2(st){
   lastV2 = st;
@@ -315,6 +323,13 @@ function renderV2(st){
     g.className="gate "+(go?"go":"stop");
     g.textContent=go ? "🟢 وقت البوكس: ضو 6 ساعات قوي (خيط مش مثبت، بحوث 16 و21)" : "🔴 مش وقت البوكس: ضو 6 ساعات مش قوي";
   }
+  const rg=$("v2regime");
+  if(st.regime && st.regime.har_ref!=null){
+    rg.hidden=false;
+    rg.textContent = st.regime.high
+      ? `🌊 السوق قوي التذبذب (HAR ${st.regime.har_ref} ≥ ${st.regime.threshold}): الخروج الذكي بيخلّي البوكس يركض بتريل ATR`
+      : `🌤 السوق هادي (HAR ${st.regime.har_ref} < ${st.regime.threshold}): الخروج الذكي بيسكّر البوكس على +75$`;
+  } else rg.hidden=true;
   renderBoard(); renderActive();
 }
 
@@ -323,10 +338,10 @@ function boxBlock(b){
   const d=el("div","boxblk");
   const top=el("div","top"); top.style.display="flex"; top.style.justifyContent="space-between"; top.style.alignItems="center";
   top.append(el("span",null,`بوكس ${b.id} · ${b.st==="in_trade"?"بصفقة":"مستني"}`), el("span","pnl "+(b.pnl>0?"pos":b.pnl<0?"neg":""), money(b.pnl)+"$"));
-  const meta=el("div","meta",[`قلبات ${b.fl}`, `أعلى ${money(b.pk)}$`, b.bt>0?(b.bl?`قفل ${b.bt}$`:`يسكّر +${b.bt}$`):"بدون هدف بوكس",
+  const meta=el("div","meta",[`قلبات ${b.fl}`, `أعلى ${money(b.pk)}$`, targetText(b),
     b.tp>0?`TP ${b.tp}$`:"", b.tr>0?`تريل ${b.tr}$`:"", `لوت ${b.lot}`, `${b.bot}–${b.top}`].filter(Boolean).join(" · "));
   const mini=el("div","mini");
-  mini.append(btn("سكّر 75",()=>send(`set ${b.id} close75`)), btn("قفل 100",()=>send(`set ${b.id} lock100`)), btn("ستوب ع الدخول",()=>send(`be ${b.id}`)));
+  mini.append(btn("ذكي",()=>send(`set ${b.id} smart`)), btn("سكّر 75",()=>send(`set ${b.id} close75`)), btn("قفل 100",()=>send(`set ${b.id} lock100`)), btn("ستوب ع الدخول",()=>send(`be ${b.id}`)));
   const c=btn("✖ سكّر البوكس",()=>send(`close ${b.id}`),"danger"); c.dataset.confirm="1"; mini.append(c);
   d.append(top, meta, mini); return d;
 }
@@ -360,7 +375,7 @@ function renderActive(){
     if(x.st!=="used"){                                    // the box this line will build
       const mini=el("div","mini");
       ["0.01","0.02","0.03"].forEach(l=>mini.append(btn(`لوت ${l}`,()=>send(`lineset ${x.id} lot ${l}`))));
-      mini.append(btn("سكّر 75",()=>send(`lineset ${x.id} close75`)), btn("قفل 100",()=>send(`lineset ${x.id} lock100`)));
+      mini.append(btn("ذكي",()=>send(`lineset ${x.id} smart`)), btn("سكّر 75",()=>send(`lineset ${x.id} close75`)), btn("قفل 100",()=>send(`lineset ${x.id} lock100`)));
       t.append(mini);
     }
     const bx=(eaSnap.boxes||[]).find(b=>b.line===x.id);
