@@ -8,18 +8,18 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>BOX Commander</title>
 <style>
-/* One column, thumb-first: lines on top, quick actions, box actions, live feed. */
+/* One column, thumb-first. Order: market reading, active lines, the line board, autopilot, new line + settings, news. */
 :root{
-  --bg:#f3f4f1; --card:#ffffff; --fg:#1b1f1c; --muted:#69716b; --line:#dfe3dc;
+  --bg:#f3f4f1; --card:#ffffff; --fg:#1b1f1c; --muted:#69716b; --line:#dfe3dc; --soft:#f7f8f5;
   --gold:#b8860b; --gold-ink:#ffffff; --ok:#1f7a4d; --warn:#b45309; --bad:#b42318;
   --mono:ui-monospace,"SF Mono",Menlo,monospace;
   --sans:-apple-system,"SF Arabic","Geeza Pro",system-ui,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0e100f; --card:#181b19; --fg:#eef1ec; --muted:#8e978f; --line:#2a2f2b;
+  --bg:#0e100f; --card:#181b19; --fg:#eef1ec; --muted:#8e978f; --line:#2a2f2b; --soft:#1f2320;
   --gold:#e0b341; --gold-ink:#16130a; --ok:#4cc38a; --warn:#f0a23b; --bad:#ff6b5e; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0e100f; --card:#181b19; --fg:#eef1ec; --muted:#8e978f; --line:#2a2f2b;
+  --bg:#0e100f; --card:#181b19; --fg:#eef1ec; --muted:#8e978f; --line:#2a2f2b; --soft:#1f2320;
   --gold:#e0b341; --gold-ink:#16130a; --ok:#4cc38a; --warn:#f0a23b; --bad:#ff6b5e; color-scheme:dark}
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -28,55 +28,76 @@ body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--sans);
 main,.stack{display:flex;flex-direction:column;gap:12px}
 main{max-width:560px;margin:0 auto}
 [hidden]{display:none!important}
-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 h1{font-size:20px;margin:0;letter-spacing:.5px}
 h1 b{color:var(--gold)}
-h2{font-size:13px;margin:0 0 8px;color:var(--muted);font-weight:600}
+h2{font-size:14px;margin:0 0 10px;color:var(--fg);font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:8px}
+h2 small{font-weight:400;color:var(--muted);font-size:12px}
+h3{font-size:13px;margin:0 0 6px;font-weight:700}
+.pills{display:flex;gap:6px}
 .pill{font-size:12px;padding:4px 10px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}
 .pill.live{color:var(--ok);border-color:var(--ok)}
+.pill.warn{color:var(--warn);border-color:var(--warn)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
 .row{display:flex;gap:8px}
 .row>*{flex:1;min-width:0}
 label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}
-input{width:100%;font:600 20px var(--mono);padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);direction:ltr;text-align:center}
+input{width:100%;font:600 18px var(--mono);padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);direction:ltr;text-align:center}
 input:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-button{font:600 15px var(--sans);border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:12px;padding:13px 8px;cursor:pointer}
+button{font:600 14px var(--sans);border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:12px;padding:11px 8px;cursor:pointer}
 button:active{transform:scale(.98)}
-button.primary{background:var(--gold);color:var(--gold-ink);border-color:var(--gold);font-size:17px}
+button:disabled{opacity:.45;cursor:default}
+button.primary{background:var(--gold);color:var(--gold-ink);border-color:var(--gold);font-size:16px}
 button.danger{color:var(--bad);border-color:var(--bad)}
 button.armed{background:var(--bad);color:#fff}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.chips{display:flex;gap:6px}
-.chips button{padding:8px 0;flex:1;font-family:var(--mono)}
-.chips button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
-#status{white-space:pre-wrap;font-size:14px;margin:0;min-height:3em}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{padding:8px 10px;flex:1;min-width:64px}
+.chips button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold);background:var(--soft)}
+.hint{font-size:12px;color:var(--muted);margin:6px 0 0}
 .lights{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;text-align:center}
 .light{border:1px solid var(--line);border-radius:12px;padding:8px 2px;font-size:12px;color:var(--muted)}
 .light b{display:block;font-size:15px;color:var(--fg);margin-bottom:4px}
 .dot{width:22px;height:22px;border-radius:50%;margin:0 auto 4px;border:1px solid var(--line);background:var(--bg)}
+.dot.sm{width:12px;height:12px;margin:0;flex:0 0 12px}
 .dot.red{background:#d64545}.dot.yellow{background:#e8b93a}.dot.green{background:#2fa866}.dot.white{background:#ffffff;box-shadow:0 0 10px #fff}
 .dot.none{background:repeating-linear-gradient(45deg,var(--line),var(--line) 3px,transparent 3px,transparent 6px)}
-.lines{display:flex;flex-direction:column;gap:6px}
-.ln{display:flex;justify-content:space-between;align-items:center;gap:8px;border-top:1px solid var(--line);padding-top:6px}
-.ln .px{font:700 17px var(--mono);direction:ltr}
-.badge{font-size:12px;font-weight:700;padding:3px 9px;border-radius:99px;border:1px solid var(--line)}
+.gate{margin-top:10px;padding:8px 10px;border-radius:10px;font-size:13px;font-weight:600}
+.gate.go{background:color-mix(in srgb,var(--ok) 14%,transparent);color:var(--ok)}
+.gate.stop{background:color-mix(in srgb,var(--bad) 12%,transparent);color:var(--bad)}
+.tiles{display:flex;flex-direction:column;gap:8px}
+.tile{border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--soft)}
+.tile .top{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.tile .px{font:700 20px var(--mono);direction:ltr}
+.tile .meta{font-size:12px;color:var(--muted);margin-top:4px}
+.tile .acts{display:flex;gap:6px;margin-top:8px}
+.tile .acts button{flex:1;padding:8px 6px;font-size:13px}
+.badge{font-size:12px;font-weight:700;padding:3px 9px;border-radius:99px;border:1px solid var(--line);white-space:nowrap}
+.badge.on{color:var(--ok);border-color:var(--ok)}
+.badge.paused{color:var(--warn);border-color:var(--warn)}
+.badge.off{color:var(--muted)}
 .badge.hold{background:var(--bad);color:#fff;border-color:var(--bad)}
 .badge.scalp{color:var(--ok);border-color:var(--ok)}
-.badge.wait{color:var(--muted)}
-#feed{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow:auto}
-#feed li{border-top:1px solid var(--line);padding-top:8px;white-space:pre-wrap;overflow-wrap:anywhere}
-#feed time{font:12px var(--mono);color:var(--muted);margin-inline-start:6px}
-#feed b{font-weight:700}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;max-width:90vw}
-.hint{font-size:12px;color:var(--muted);margin:6px 0 0}
-textarea{width:100%;font:13px var(--mono);padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);direction:ltr;min-height:70px}
-#modes button,#entries button{font-family:var(--sans)}
-.ln .dot{width:14px;height:14px;margin:0;flex:0 0 14px}
-.ln .acts{display:flex;gap:4px}
-.ln .acts button{padding:6px 9px;font-size:13px}
-.switch{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0}
+.ln{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);padding:8px 0}
+.ln:first-child{border-top:none}
+.ln .px{font:700 16px var(--mono);direction:ltr}
+.ln .grow{flex:1;min-width:0}
+.ln .sub{font-size:12px;color:var(--muted)}
+.ln button{padding:7px 10px;font-size:13px}
+.ap{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
+.ap.first{border-top:none;padding-top:0;margin-top:0}
+.switch{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.switch button{min-width:72px}
 .switch button[aria-pressed="true"]{background:var(--ok);color:#fff;border-color:var(--ok)}
-button:disabled{opacity:.45}
+.tested{font-size:12px;margin-top:6px;padding:8px 10px;border-radius:10px;background:var(--soft);color:var(--muted)}
+.tested b{color:var(--fg)}
+#status{white-space:pre-wrap;font-size:13px;margin:0;min-height:2em}
+#feed{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow:auto}
+#feed li{border-top:1px solid var(--line);padding-top:8px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
+#feed time{font:12px var(--mono);color:var(--muted);margin-inline-start:6px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;max-width:90vw;z-index:9}
+textarea{width:100%;font:13px var(--mono);padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);direction:ltr;min-height:70px}
+details summary{cursor:pointer;font-weight:700;font-size:14px}
 @media (prefers-reduced-motion:reduce){button:active{transform:none}}
 </style>
 </head>
@@ -84,89 +105,131 @@ button:disabled{opacity:.45}
 <main>
   <header>
     <h1><b>BOX</b> Commander</h1>
-    <span id="conn" class="pill">غير متصل</span>
+    <div class="pills"><span id="eaPill" class="pill">البوت: –</span><span id="conn" class="pill">غير متصل</span></div>
   </header>
 
   <section class="card" id="setup" hidden>
     <h2>الإعداد (مرة وحدة)</h2>
     <label for="code">الصق كود الإعداد</label>
-    <textarea id="code" dir="ltr" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="cmd-topic|alert-topic|PIN|v2-topic"></textarea>
+    <textarea id="code" placeholder="cmd-topic|alert-topic|PIN|v2-topic"></textarea>
     <p class="hint">الكود بيتخزن على تلفونك بس، مش بالصفحة.</p>
     <button class="primary" id="saveCode" style="width:100%;margin-top:8px">حفظ</button>
   </section>
 
   <div id="app" class="stack" hidden>
+
   <section class="card" id="v2card">
-    <h2>قراءة السوق (سكانر v2) <span id="v2age" style="float:left;font-weight:400"></span></h2>
+    <h2>قراءة السوق <small id="v2age"></small></h2>
     <div class="lights" id="lights"></div>
     <p class="hint" id="v2dir">الاتجاه الحالي: –</p>
-    <p class="hint">الألوان: 🔴 ضعيف · 🟡 عادي · 🟢 قوي · ⚪ انفجار، نسبة لحركة آخر شهر. 12 و24 ساعة لسا ما نجحوا بالفحص.</p>
-    <h2 style="margin-top:12px">لوحة الخطوط</h2>
-    <div class="lines" id="v2lines"><p class="hint">ما في خطوط آخر 24 ساعة</p></div>
-    <p class="hint">🟢 جديد والسوق قوي (6 س) · 🟡 انلمس قبل أو السوق عادي · 🔴 خلص وقته أو انستعمل أو انلغى. الخط الاحتياطي طلع مش أضعف من الرئيسي. مكان الخط لحاله كان قريب من العشوائي بالبحث القديم.</p>
+    <div id="v2gate" class="gate" hidden></div>
+    <p class="hint">🔴 ضعيف · 🟡 عادي · 🟢 قوي · ⚪ انفجار، نسبة لحركة آخر شهر. 12 و24 ساعة ما نجحوا بالفحص (ما في قراءة).</p>
   </section>
 
   <section class="card">
-    <h2>خطوط البوت</h2>
+    <h2>الخطوط المفعّلة <small id="activeCount"></small></h2>
+    <div class="tiles" id="activeLines"><p class="hint">ما في خطوط مفعّلة بالبوت.</p></div>
+  </section>
+
+  <section class="card">
+    <h2>لوحة الخطوط الجديدة <small>من السكانر، آخر 24 ساعة</small></h2>
+    <div id="board"><p class="hint">ما في خطوط آخر 24 ساعة</p></div>
+    <p class="hint">🟢 جديد والسوق قوي (6 س) · 🟡 انلمس أو السوق عادي · 🔴 خلص وقته أو انستعمل. الاحتياطي مش أضعف من الرئيسي (بحث 10). "فعّل" بيبعت الخط بإعدادات قسم "خط جديد".</p>
+  </section>
+
+  <section class="card">
+    <h2>AUTOPILOT <small>كله مطفي افتراضياً</small></h2>
+
+    <div class="ap first">
+      <div class="switch"><h3>Box Autopilot: اختيار البوكسات بالضو</h3><button id="apBox" aria-pressed="false" data-confirm="1">OFF</button></div>
+      <p class="hint">لما يشتغل: كل خط أخضر من اللوحة (ضو 6 ساعات قوي) بينفعّل لحاله، بشمعة كاملة ودخول على إغلاق برّا، ولوت البوت.</p>
+      <div class="tested"><b>المفحوص بصراحة:</b> البوكسات وقت الضو القوي ربحت بفترتين من تلاتة على مستوى البوكس (بحوث 16 و20)، والضو هو الإشارة الوحيدة اللي ضلّت ثابتة (بحث 21). بس كحساب 252$ ما نجح (بحث 21). <b>مش مثبت.</b></div>
+    </div>
+
+    <div class="ap">
+      <h3>TP Autopilot: الخروج</h3>
+      <div class="chips" id="apTp">
+        <button aria-pressed="true" data-tp="off">OFF</button>
+        <button aria-pressed="false" data-tp="close75">CLOSE_75</button>
+        <button aria-pressed="false" data-tp="lock100">LOCK_100</button>
+      </div>
+      <p class="hint">بيتطبّق على البوكسات اللي بيفعّلها الأوتوبايلوت. البوكس بيضل يقلب بقانونه، والخروج بيسكّر البوكس كله على ربح بس.</p>
+      <div class="tested"><b>CLOSE_75</b> (يسكّر لما مجموع البوكس +75$ خلال 24 س): أحسن خروج من 24 قاعدة بالنص التاني 2025 (بحث 21)، ما انفحص لحاله بفترات تانية.<br>
+      <b>LOCK_100</b> (بعد +100$ بيقفل ربح وبيلحق): حساب بحدود البوت ربح بالتلات فترات على 0.01، +2,744$ بـ 15 شهر، بس نزل لـ −1,194$ (بحث 17)، وعلى 252$ انمسح بفترة (بحث 21).<br>
+      موديلات الخروج المتعلّمة فشلت (بحوث 19 و21). <b>ولا واحد مثبت.</b></div>
+    </div>
+
+    <div class="ap">
+      <h3>Risk: إدارة المخاطرة</h3>
+      <label>أقصى عدد بوكسات مع بعض</label>
+      <div class="chips" id="apN">
+        <button data-n="1">1</button><button data-n="2">2</button><button data-n="3">3</button><button data-n="5">5</button><button data-n="10">10</button>
+      </div>
+      <div class="row" style="align-items:end;margin-top:10px">
+        <div><label for="capD">حد اليوم $</label><input id="capD" inputmode="decimal"></div>
+        <div><label for="capW">حد الأسبوع $</label><input id="capW" inputmode="decimal"></div>
+        <button id="sendCaps" style="flex:0 0 72px">حفظ</button>
+      </div>
+      <p class="hint" id="capHint">بتقدر تنزّل الحد أو ترجّعه لحد الرقم المكتوب على الشارت.</p>
+      <div class="row" style="margin-top:8px">
+        <button disabled>حد الشهر: مش بالبوت لسا</button>
+        <button disabled>حد أدنى للحساب: مش بالبوت لسا</button>
+      </div>
+      <div class="tested"><b>المفحوص على 252$</b> (بحث 21): بوكسين، يوم 20$، أسبوع 50$، شهر 150$، حد أدنى 150$: ما انمسح، بس وقّف الحساب بفترتين (252 ← 138$ و150$). حدود البوت العادية (50/100، 10 بوكسات): ربحت كتير بفترة، بس انمسحت بفترة تانية. <b>ولا إعداد مثبت</b> لحساب بهالحجم.</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>خط جديد</h2>
     <div class="row">
       <div><label for="up">خط</label><input id="up" inputmode="decimal" placeholder="4068.45"></div>
       <div><label for="dn">خط تاني (اختياري)</label><input id="dn" inputmode="decimal" placeholder="4034.13"></div>
     </div>
     <label style="margin-top:10px">البوكس</label>
     <div class="chips" id="modes">
-      <button aria-pressed="true" data-mode="rej">رفض (ذيل الشمعة)</button>
-      <button aria-pressed="false" data-mode="full">شمعة كاملة</button>
+      <button aria-pressed="false" data-mode="rej">رفض (ذيل الشمعة)</button>
+      <button aria-pressed="true" data-mode="full">شمعة كاملة</button>
     </div>
     <label style="margin-top:10px">الدخول</label>
     <div class="chips" id="entries">
-      <button aria-pressed="true" data-entry="touch">لمس الحافة</button>
-      <button aria-pressed="false" data-entry="close">إغلاق برّا</button>
+      <button aria-pressed="false" data-entry="touch">لمس الحافة</button>
+      <button aria-pressed="true" data-entry="close">إغلاق برّا</button>
     </div>
-    <label style="margin-top:10px">لوت البوكس</label>
+    <label style="margin-top:10px">لعبة البوكس (البوكس هو الصفقة)</label>
+    <div class="chips" id="games">
+      <button aria-pressed="false" data-game="close75">سكّر 75</button>
+      <button aria-pressed="true" data-game="lock100">قفل 100</button>
+      <button aria-pressed="false" data-game="gameoff">بدون</button>
+    </div>
+    <label style="margin-top:10px">لوت</label>
     <div class="chips" id="lots">
       <button aria-pressed="true" data-lot="0.01">0.01</button>
       <button aria-pressed="false" data-lot="0.02">0.02</button>
       <button aria-pressed="false" data-lot="0.03">0.03</button>
     </div>
-    <button class="primary" id="sendLines" style="width:100%;margin-top:10px">فعّل الخطوط</button>
-    <p class="hint">الخط سعر بس، بأي جهة من السعر، وكل خط لحاله. رفض: بس الشمعة اللي بترفض عند الخط بتعمل بوكس، والبوكس هو ذيلها؛ اللمسة بدون رفض ما بتعمل إشي والخط بيضل مستني.</p>
-    <div class="lines" id="eaLines" style="margin-top:10px"></div>
+    <button class="primary" id="sendLines" style="width:100%;margin-top:12px">فعّل الخط</button>
+    <p class="hint">الخط سعر بس، بأي جهة، وكل خط لحاله. الافتراضي هون هو المفحوص: شمعة كاملة، دخول على إغلاق برّا. ولا طريقة دخول أو خروج مثبتة لسا.</p>
   </section>
 
   <section class="card">
-    <h2>إعدادات البوت</h2>
-    <div class="row" style="align-items:end">
-      <div><label for="capD">حد اليوم $</label><input id="capD" inputmode="decimal"></div>
-      <div><label for="capW">حد الأسبوع $</label><input id="capW" inputmode="decimal"></div>
-      <button id="sendCaps" style="flex:0 0 80px">حفظ</button>
-    </div>
-    <p class="hint" id="capHint">بتقدر تنزّل الحد أو ترجّعه لحد الرقم المكتوب على الشارت.</p>
-    <div class="switch"><span>AUTO LINE (السكانر بيفعّل الخطوط القوية لحاله)</span><button id="autoLine" aria-pressed="false" data-confirm="1">OFF</button></div>
-    <div class="switch"><span>AUTOPILOT للخروج</span><button id="autoPilot" disabled>مقفول</button></div>
-    <p class="hint">الخروج الأوتوماتيكي مقفول: ولا طريقة خروج فاتت الباقي لما فحصناها على التِكات (بحث B). الهدف المقترح وصف بس، مش وعد.</p>
-  </section>
-
-  <section class="card">
-    <h2>الحالة</h2>
+    <h2>البوت</h2>
     <pre id="status">اكبس "حالة"</pre>
     <div class="grid" style="margin-top:10px">
       <button data-cmd="status">📊 حالة</button>
       <button data-cmd="pause">⏸ وقف</button>
       <button data-cmd="resume">▶️ كمّل</button>
-      <button data-cmd="line off">〰️ الغي الخطوط</button>
+      <button data-cmd="line off" data-confirm="1">〰️ الغي الخطوط</button>
       <button class="danger" data-cmd="close all" data-confirm="1">سكّر الكل</button>
       <button class="danger" data-cmd="stop" data-confirm="1">🛑 وقف كامل</button>
     </div>
-  </section>
-
-  <section class="card">
-    <h2>بوكس</h2>
-    <div class="row" style="align-items:end">
-      <div style="flex:0 0 90px"><label for="boxNo">رقم</label><input id="boxNo" inputmode="numeric" placeholder="1"></div>
-      <button data-box="be">ستوب ع الدخول</button>
-      <button data-box="half">سكّر نص</button>
-      <button class="danger" data-box="close" data-confirm="1">سكّر</button>
-    </div>
+    <details style="margin-top:12px">
+      <summary>بوكس برقمه</summary>
+      <div class="row" style="align-items:end;margin-top:8px">
+        <div style="flex:0 0 80px"><label for="boxNo">رقم</label><input id="boxNo" inputmode="numeric" placeholder="1"></div>
+        <button data-box="be">ستوب ع الدخول</button>
+        <button class="danger" data-box="close" data-confirm="1">سكّر</button>
+      </div>
+    </details>
   </section>
 
   <section class="card">
@@ -179,12 +242,14 @@ button:disabled{opacity:.45}
 <div class="toast" id="toast" hidden></div>
 <script>
 const NTFY = "https://ntfy.sh";
-let cfg = null, lot = "0.01", mode = "rej", entry = "touch", es = null, armed = null, eaSnap = null, lastV2 = null;
+let cfg = null, es = null, es2 = null, armed = null, eaSnap = null, lastV2 = null;
+let form = {mode:"full", entry:"close", game:"lock100", lot:"0.01"};
 const $ = id => document.getElementById(id);
+const NAMES = {red:"ضعيف",yellow:"عادي",green:"قوي",white:"انفجار",none:"ما في قراءة"};
+const LST = {armed:"شغّال",paused:"موقوف",used:"عمل بوكس",cancelled:"ملغي",expired:"خلص وقته"};
 
 function load(){ try { cfg = JSON.parse(localStorage.getItem("boxcfg") || "null"); } catch(e){ cfg = null; } }
 function toast(t){ const el=$("toast"); el.textContent=t; el.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>el.hidden=true,2600); }
-
 async function send(text){
   if(!cfg) return;
   try{
@@ -192,159 +257,149 @@ async function send(text){
     toast(r.ok ? "انبعت ✓ الرد جاي…" : "ما انبعت: "+r.status);
   }catch(e){ toast("ما في نت؟ ما انبعت"); }
 }
+function el(tag, cls, text){ const e=document.createElement(tag); if(cls) e.className=cls; if(text!=null) e.textContent=text; return e; }
+function btn(text, run, cls){ const b=el("button", cls, text); b.onclick=()=>confirmTap(b, run); return b; }
+function confirmTap(b, run){
+  if(b.dataset.confirm!=="1") return run();
+  if(armed===b){ armed=null; b.classList.remove("armed"); b.textContent=b.dataset.label; return run(); }
+  if(armed){ armed.classList.remove("armed"); armed.textContent=armed.dataset.label; }
+  armed=b; b.dataset.label=b.textContent; b.textContent="اكبس كمان مرة"; b.classList.add("armed");
+  setTimeout(()=>{ if(armed===b){ armed=null; b.classList.remove("armed"); b.textContent=b.dataset.label; } },4000);
+}
+function pressed(id, attr, val){ [...$(id).children].forEach(x=>x.setAttribute("aria-pressed", x.dataset[attr]===String(val) ? "true":"false")); }
+function boardAt(px){ return lastV2 ? (lastV2.lines||[]).find(x=>Math.abs(x.line-px)<0.005) : null; }
+function eaAt(px){ return eaSnap ? eaSnap.lines.find(x=>Math.abs(x.px-px)<0.005 && x.st!=="cancelled") : null; }
+function targetText(x){ return x.bt>0 ? (x.bl ? `قفل ${x.bt}$ ويلحق` : `يسكّر على +${x.bt}$`) : "بدون هدف بوكس"; }
 
-const NAMES={red:"ضعيف",yellow:"عادي",green:"قوي",white:"انفجار",none:"ما في قراءة"};
-const LST={armed:"جاهز بالبوت",paused:"موقوف",used:"عمل بوكس",cancelled:"ملغي",expired:"خلص وقته"};
-function btn(text,run,cls){ const b=document.createElement("button"); b.textContent=text; if(cls) b.className=cls; b.onclick=run; return b; }
-function eaLineAt(px){ return eaSnap ? eaSnap.lines.find(x=>Math.abs(x.px-px)<0.005 && x.st!=="cancelled") : null; }
-function lineActs(x){
-  const a=document.createElement("div"); a.className="acts";
-  if(x.st==="armed") a.append(btn("وقّف",()=>send(`line pause ${x.id}`)));
-  if(x.st==="paused") a.append(btn("فعّل",()=>send(`line arm ${x.id}`)));
-  if(x.st==="armed"||x.st==="paused") a.append(btn("الغي",()=>send(`line cancel ${x.id}`),"danger"));
-  return a;
-}
-function renderEA(){
-  if(!eaSnap) return;
-  const box=$("eaLines"); box.textContent="";
-  eaSnap.lines.slice().reverse().forEach(x=>{
-    const r=document.createElement("div"); r.className="ln";
-    const left=document.createElement("div");
-    const px=document.createElement("div"); px.className="px"; px.textContent=x.px;
-    const sub=document.createElement("div"); sub.className="hint"; sub.style.margin="0";
-    sub.textContent=`خط ${x.id} · ${LST[x.st]||x.st} · ${x.m==="r"?"رفض":"كاملة"} · ${x.t?"لمس":"إغلاق"} · لوت ${x.lot}${x.src==="a"?" · أوتو":""}${x.box?" · بوكس "+x.box:""}`;
-    left.append(px,sub); r.append(left,lineActs(x)); box.append(r);
-  });
-  const c=eaSnap.caps; $("capD").placeholder=c[0]; $("capW").placeholder=c[1];
-  $("capHint").textContent=`الحد هلأ ${c[0]}/${c[1]}$ · أقصى من الشارت ${c[2]}/${c[3]}$ · لوت أقصى ${eaSnap.lot_cap}`;
-  const on=!!eaSnap.settings.auto_line; $("autoLine").setAttribute("aria-pressed",on?"true":"false"); $("autoLine").textContent=on?"ON":"OFF";
-  if(lastV2) renderV2(lastV2);
-}
 function renderV2(st){
-  lastV2=st;
+  lastV2 = st;
   const L=$("lights"); L.textContent="";
   ["1h","3h","6h","12h","24h"].forEach(k=>{
     const c=(st.light&&st.light[k]&&st.light[k].colour)||"none";
-    const d=document.createElement("div"); d.className="light";
-    const b=document.createElement("b"); b.textContent=k.replace("h"," س");
-    const dot=document.createElement("div"); dot.className="dot "+c;
-    d.append(b,dot,document.createTextNode(NAMES[c]||c)); L.append(d);
+    const d=el("div","light"); d.append(el("b",null,k.replace("h"," س")), el("div","dot "+c), document.createTextNode(NAMES[c]||c)); L.append(d);
   });
   const dir={up:"صاعد (H1 وH4)",down:"هابط (H1 وH4)",mixed:"مختلط"}[st.direction_now&&st.direction_now.h1_h4]||"–";
   $("v2dir").textContent="الاتجاه الحالي: "+dir+" · وصف لهلأ، مش توقّع"+(st.normal_3h_range?" · حركة 3 ساعات العادية: "+st.normal_3h_range+"$":"");
-  $("v2age").textContent=(st.ts_utc||"").slice(11,16)+" UTC"+((st.warnings||[]).some(w=>w.startsWith("gold"))?" ⚠️":"");
-  const box=$("v2lines"); box.textContent="";
-  (st.lines||[]).slice().reverse().forEach(x=>{
-    const r=document.createElement("div"); r.className="ln";
-    const left=document.createElement("div");
-    const px=document.createElement("div"); px.className="px"; px.textContent=x.line;
-    const ea=eaLineAt(x.line);
-    let lt=x.light||"yellow";
-    if(ea && (ea.st==="used"||ea.st==="expired")) lt="red";
-    const dot=document.createElement("div"); dot.className="dot "+lt;
-    const sub=document.createElement("div"); sub.className="hint"; sub.style.margin="0";
-    sub.textContent=(x.k==="B"?"احتياطي":"رئيسي")+" · "+(x.side==="above"?"فوق":"تحت")+" · "+(x.declared_utc||"").slice(11,16)+" UTC"
-      +(x.status==="touched"?" · انلمس":x.status==="ended"?" · خلص وقته":"")
-      +(x.near_target?" · هدف قريب "+x.near_target:"")+(x.tp_usd?" · هدف مقترح "+x.tp_usd+"$":"")
-      +(ea?" · "+(LST[ea.st]||ea.st):"");
-    left.append(px,sub);
-    const bd=document.createElement("span");
-    if(x.call){ bd.className="badge "+(x.call==="HOLD"?"hold":"scalp"); bd.textContent=x.call; }
-    else { bd.className="badge wait"; bd.textContent="مستني"; }
-    let acts;
-    if(ea) acts=lineActs(ea);
-    else if(x.status!=="ended"){ acts=document.createElement("div"); acts.className="acts"; acts.append(btn("فعّل",()=>send(`line ${x.line} lot ${lot} ${mode} ${entry}`))); }
-    r.prepend(dot); r.append(left,bd); if(acts) r.append(acts); box.append(r);
-  });
-  if(!box.children.length){ const p=document.createElement("p"); p.className="hint"; p.textContent="ما في خطوط آخر 24 ساعة"; box.append(p); }
+  const old=(st.data_age_min||0)>10;
+  $("v2age").textContent=(st.ts_utc||"").slice(11,16)+" UTC"+(old?" · ⚠️ داتا عمرها "+Math.round(st.data_age_min)+" دقيقة":"");
+  const g=$("v2gate");
+  if(st.s6_now==null){ g.hidden=true; }
+  else{
+    g.hidden=false; const go=st.s6_now>=0.5;
+    g.className="gate "+(go?"go":"stop");
+    g.textContent=go ? "🟢 وقت البوكس: ضو 6 ساعات قوي (خيط مش مثبت، بحوث 16 و21)" : "🔴 مش وقت البوكس: ضو 6 ساعات مش قوي";
+  }
+  renderBoard(); renderActive();
 }
-let es2=null;
+
+function renderActive(){
+  const box=$("activeLines"); box.textContent="";
+  const list=eaSnap ? eaSnap.lines.filter(x=>["armed","paused","used"].includes(x.st)) : [];
+  $("activeCount").textContent=eaSnap ? `${list.filter(x=>x.st==="armed").length} شغّال · ${list.filter(x=>x.st==="paused").length} موقوف` : "";
+  if(!eaSnap){ box.append(el("p","hint","بستنّى البوت الجديد v1.20: القديم ما بيبعت قائمة خطوط.")); return; }
+  if(!list.length){ box.append(el("p","hint","ما في خطوط مفعّلة بالبوت.")); return; }
+  list.slice().reverse().forEach(x=>{
+    const t=el("div","tile"), top=el("div","top"), left=el("div");
+    left.style.display="flex"; left.style.alignItems="center"; left.style.gap="8px";
+    const b=boardAt(x.px); left.append(el("div","dot sm "+(b?b.light:"none")), el("span","px",x.px));
+    top.append(left, el("span","badge "+(x.st==="armed"?"on":x.st==="paused"?"paused":"off"), LST[x.st]||x.st));
+    const side=eaSnap.bid ? (x.px>eaSnap.bid?"فوق السعر":"تحت السعر")+" بـ "+Math.abs(x.px-eaSnap.bid).toFixed(2) : "";
+    const meta=el("div","meta",[`خط ${x.id}`, side, x.m==="r"?"رفض":"شمعة كاملة", x.t?"لمس":"إغلاق برّا", `لوت ${x.lot}`,
+      targetText(x), x.src==="a"?"أوتو":"", x.box?`بوكس ${x.box}`:""].filter(Boolean).join(" · "));
+    const acts=el("div","acts");
+    if(x.st==="armed") acts.append(btn("⏸ وقّف",()=>send(`line pause ${x.id}`)));
+    else acts.append(btn("▶️ إعادة تفعيل",()=>send(`line arm ${x.id}`)));
+    const c=btn("✖ الغي",()=>send(`line cancel ${x.id}`),"danger"); c.dataset.confirm="1"; acts.append(c);
+    t.append(top, meta, acts); box.append(t);
+  });
+}
+
+function renderBoard(){
+  const box=$("board"); box.textContent="";
+  ((lastV2&&lastV2.lines)||[]).slice().reverse().forEach(x=>{
+    const r=el("div","ln"), ea=eaAt(x.line);
+    let lt=x.light||"yellow"; if(ea && (ea.st==="used"||ea.st==="expired")) lt="red";
+    const mid=el("div","grow");
+    mid.append(el("div","px",x.line), el("div","sub",[x.k==="B"?"احتياطي":"رئيسي", x.side==="above"?"فوق":"تحت",
+      (x.declared_utc||"").slice(11,16)+" UTC", x.status==="touched"?"انلمس":x.status==="ended"?"خلص وقته":"مستني",
+      x.near_target?"هدف قريب "+x.near_target:"", x.tp_usd?"هدف مقترح "+x.tp_usd+"$":"", ea?"بالبوت: "+(LST[ea.st]||ea.st):""].filter(Boolean).join(" · ")));
+    r.append(el("div","dot sm "+lt), mid);
+    if(x.call) r.append(el("span","badge "+(x.call==="HOLD"?"hold":"scalp"), x.call));
+    if(!ea && x.status!=="ended") r.append(btn("فعّل",()=>send(lineCmd(x.line))));
+    box.append(r);
+  });
+  if(!box.children.length) box.append(el("p","hint","ما في خطوط آخر 24 ساعة"));
+}
+
+function renderAutopilot(){
+  if(!eaSnap){ $("eaPill").textContent="البوت: قديم v1.00"; $("eaPill").className="pill warn"; return; }
+  $("eaPill").textContent=eaSnap.paused ? "البوت: موقوف" : "البوت: شغّال";
+  $("eaPill").className="pill "+(eaSnap.paused?"warn":"live");
+  const on=!!eaSnap.settings.auto_line, b=$("apBox");
+  b.setAttribute("aria-pressed", on?"true":"false"); if(armed!==b) b.textContent=on?"ON":"OFF";
+  pressed("apTp","tp", eaSnap.tp||"off");
+  pressed("apN","n", eaSnap.max_boxes);
+  const c=eaSnap.caps; $("capD").placeholder=c[0]; $("capW").placeholder=c[1];
+  $("capHint").textContent=`الحد هلأ ${c[0]}/${c[1]}$ · أقصى من الشارت ${c[2]}/${c[3]}$ · لوت أقصى ${eaSnap.lot_cap}`;
+}
+
+function addFeed(m){
+  if(!m || m.event!=="message") return;
+  if(m.title==="STATE"){ try{ eaSnap=JSON.parse(m.message); renderActive(); renderBoard(); renderAutopilot(); }catch(e){} return; }
+  if((m.title||"").includes("📊")) $("status").textContent=m.message;
+  const li=el("li"), t=new Date(m.time*1000).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+  li.append(el("b",null,(m.title||"BOX")+" "), el("time",null,t), el("br"), document.createTextNode(m.message||""));
+  $("feed").prepend(li);
+  while($("feed").children.length>40) $("feed").lastChild.remove();
+}
+async function connect(){
+  try{ const r=await fetch(`${NTFY}/${cfg.a}/json?poll=1&since=12h`); (await r.text()).split("\n").filter(Boolean).forEach(l=>{ try{ addFeed(JSON.parse(l)); }catch(e){} }); }catch(e){}
+  if(es) es.close();
+  es=new EventSource(`${NTFY}/${cfg.a}/sse`);
+  es.onopen=()=>{ $("conn").textContent="متصل"; $("conn").className="pill live"; };
+  es.onerror=()=>{ $("conn").textContent="بيعيد الاتصال…"; $("conn").className="pill"; };
+  es.onmessage=e=>{ try{ addFeed(JSON.parse(e.data)); }catch(x){} };
+}
 async function connectV2(){
-  if(!cfg.v) { $("v2card").hidden=true; return; }
-  $("v2card").hidden=false;
+  if(!cfg.v){ $("v2card").hidden=true; return; }
   const take=m=>{ if(m&&m.event==="message"){ try{ renderV2(JSON.parse(m.message)); }catch(e){} } };
   try{ const r=await fetch(`${NTFY}/${cfg.v}/json?poll=1&since=2h`); (await r.text()).split("\n").filter(Boolean).forEach(l=>{ try{ take(JSON.parse(l)); }catch(e){} }); }catch(e){}
   if(es2) es2.close();
   es2=new EventSource(`${NTFY}/${cfg.v}/sse`); es2.onmessage=e=>{ try{ take(JSON.parse(e.data)); }catch(x){} };
 }
 
-function addFeed(m){
-  if(!m || m.event!=="message") return;
-  if(m.title==="STATE"){ try{ eaSnap=JSON.parse(m.message); renderEA(); }catch(e){} return; }
-  if((m.title||"").includes("📊")) $("status").textContent = m.message;
-  const li=document.createElement("li");
-  const t=new Date(m.time*1000).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
-  const b=document.createElement("b"); b.textContent=(m.title||"BOX")+" ";
-  const tm=document.createElement("time"); tm.textContent=t;
-  li.append(b,tm,document.createElement("br"),document.createTextNode(m.message||""));
-  $("feed").prepend(li);
-  while($("feed").children.length>40) $("feed").lastChild.remove();
-}
-
-async function connect(){
-  try{
-    const r = await fetch(`${NTFY}/${cfg.a}/json?poll=1&since=12h`);
-    const txt = await r.text();
-    txt.split("\n").filter(Boolean).forEach(l=>{ try{ addFeed(JSON.parse(l)); }catch(e){} });
-  }catch(e){}
-  if(es) es.close();
-  es = new EventSource(`${NTFY}/${cfg.a}/sse`);
-  es.onopen = ()=>{ $("conn").textContent="متصل"; $("conn").classList.add("live"); };
-  es.onerror = ()=>{ $("conn").textContent="بيعيد الاتصال…"; $("conn").classList.remove("live"); };
-  es.onmessage = e=>{ try{ addFeed(JSON.parse(e.data)); }catch(x){} };
-}
-
-function confirmTap(btn, run){
-  if(btn.dataset.confirm!=="1") return run();
-  if(armed===btn){ armed=null; btn.classList.remove("armed"); btn.textContent=btn.dataset.label; return run(); }
-  if(armed){ armed.classList.remove("armed"); armed.textContent=armed.dataset.label; }
-  armed=btn; btn.dataset.label=btn.textContent; btn.textContent="اكبس كمان مرة"; btn.classList.add("armed");
-  setTimeout(()=>{ if(armed===btn){ armed=null; btn.classList.remove("armed"); btn.textContent=btn.dataset.label; } },4000);
-}
+function lineCmd(px){ return `line ${px} lot ${form.lot} ${form.mode} ${form.entry} ${form.game}`; }
+function chips(id, attr, set){ $(id).onclick=e=>{ const b=e.target.closest("button"); if(!b||b.disabled) return; set(b.dataset[attr]); pressed(id, attr, b.dataset[attr]); }; }
+chips("modes","mode",v=>form.mode=v); chips("entries","entry",v=>form.entry=v); chips("games","game",v=>form.game=v); chips("lots","lot",v=>form.lot=v);
+$("apTp").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; send(`tp ${b.dataset.tp}`); pressed("apTp","tp",b.dataset.tp); };
+$("apN").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; send(`boxes ${b.dataset.n}`); pressed("apN","n",b.dataset.n); };
+$("apBox").onclick=()=>{ const b=$("apBox"), on=b.getAttribute("aria-pressed")==="true"; confirmTap(b,()=>send(`auto ${on?"off":"on"}`)); };
+$("sendCaps").onclick=()=>{ const d=$("capD").value.trim(), w=$("capW").value.trim();
+  if(!/^\d+(\.\d+)?$/.test(d)||!/^\d+(\.\d+)?$/.test(w)){ toast("اكتب الحدين"); return; } send(`caps ${d} ${w}`); };
+$("sendLines").onclick=()=>{
+  const up=$("up").value.trim().replace(",","."), dn=$("dn").value.trim().replace(",",".");
+  const ok=v=>v==="" || /^\d+(\.\d+)?$/.test(v);
+  if((!up && !dn) || !ok(up) || !ok(dn)){ toast("اكتب خط أو خطين صح"); return; }
+  send(lineCmd([up,dn].filter(Boolean).join(" ")));
+};
+document.querySelectorAll("[data-cmd]").forEach(b=> b.onclick=()=>confirmTap(b,()=>send(b.dataset.cmd)));
+document.querySelectorAll("[data-box]").forEach(b=> b.onclick=()=>{
+  const n=$("boxNo").value.trim(); if(!/^\d+$/.test(n)){ toast("اكتب رقم البوكس"); return; }
+  confirmTap(b,()=>send(`${b.dataset.box} ${n}`));
+});
 
 function start(){
   load();
-  $("setup").hidden = !!cfg;
-  $("app").hidden = !cfg;
-  if(cfg){ connect(); connectV2(); }
+  $("setup").hidden=!!cfg; $("app").hidden=!cfg;
+  if(cfg){ connect(); connectV2(); renderActive(); renderAutopilot(); }
 }
-
-$("saveCode").onclick = ()=>{
-  // iPhone paste into an RTL box can add invisible direction marks or Arabic digits: keep only what the code can hold
-  const clean = $("code").value.replace(/[\u0660-\u0669]/g, d=>String(d.charCodeAt(0)-0x660))
-                                .replace(/[\u06F0-\u06F9]/g, d=>String(d.charCodeAt(0)-0x6F0))
-                                .replace(/[｜¦]/g, "|").replace(/[^A-Za-z0-9|\-]/g, "");
-  const parts = clean.split("|").filter(Boolean);
+$("saveCode").onclick=()=>{
+  const parts=$("code").value.trim().split("|").map(s=>s.trim());
   if((parts.length!==3 && parts.length!==4) || !parts[0] || !parts[1] || !/^\d{4}$/.test(parts[2])){ toast("الكود مش كامل"); return; }
   try{ localStorage.setItem("boxcfg", JSON.stringify({c:parts[0],a:parts[1],p:parts[2],v:parts[3]||""})); }catch(e){ toast("التلفون ما سمح بالحفظ"); return; }
   start();
 };
-$("reset").onclick = ()=>{ try{ localStorage.removeItem("boxcfg"); }catch(e){} cfg=null; if(es) es.close(); start(); };
-
-$("lots").onclick = e=>{
-  const b=e.target.closest("button"); if(!b) return;
-  lot=b.dataset.lot;
-  [...$("lots").children].forEach(x=>x.setAttribute("aria-pressed", x===b?"true":"false"));
-};
-$("sendLines").onclick = ()=>{
-  const up=$("up").value.trim().replace(",","."), dn=$("dn").value.trim().replace(",",".");
-  const ok=v=>v==="" || /^\d+(\.\d+)?$/.test(v);
-  if((!up && !dn) || !ok(up) || !ok(dn)){ toast("اكتب خط أو خطين صح"); return; }
-  send(`line ${[up,dn].filter(Boolean).join(" ")} lot ${lot} ${mode} ${entry}`);
-};
-function chips(id,attr,set){ $(id).onclick=e=>{ const b=e.target.closest("button"); if(!b) return; set(b.dataset[attr]);
-  [...$(id).children].forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false")); }; }
-chips("modes","mode",v=>mode=v); chips("entries","entry",v=>entry=v);
-$("sendCaps").onclick=()=>{ const d=$("capD").value.trim(), w=$("capW").value.trim();
-  if(!/^\d+(\.\d+)?$/.test(d)||!/^\d+(\.\d+)?$/.test(w)){ toast("اكتب الحدين"); return; } send(`caps ${d} ${w}`); };
-$("autoLine").onclick=()=>{ const b=$("autoLine"); const on=b.getAttribute("aria-pressed")==="true";
-  confirmTap(b,()=>send(`auto ${on?"off":"on"}`)); };
-document.querySelectorAll("[data-cmd]").forEach(b=> b.onclick=()=>confirmTap(b,()=>send(b.dataset.cmd)));
-document.querySelectorAll("[data-box]").forEach(b=> b.onclick=()=>{
-  const n=$("boxNo").value.trim();
-  if(!/^\d+$/.test(n)){ toast("اكتب رقم البوكس"); return; }
-  confirmTap(b,()=>send(`${b.dataset.box} ${n}`));
-});
+$("reset").onclick=()=>{ try{ localStorage.removeItem("boxcfg"); }catch(e){} cfg=null; if(es) es.close(); if(es2) es2.close(); start(); };
 start();
 </script>
 </body>
