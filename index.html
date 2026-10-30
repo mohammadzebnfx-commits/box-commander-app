@@ -98,6 +98,14 @@ button.armed{background:var(--bad);color:#fff}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;max-width:90vw;z-index:9}
 textarea{width:100%;font:13px var(--mono);padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);direction:ltr;min-height:70px}
 details summary{cursor:pointer;font-weight:700;font-size:14px}
+.boxblk{margin-top:8px;padding:8px;border-radius:10px;border:1px dashed var(--line)}
+.boxblk .pnl{font:700 18px var(--mono);direction:ltr}
+.pos{color:var(--ok)}.neg{color:var(--bad)}
+.totals{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;text-align:center}
+.totals div{border:1px solid var(--line);border-radius:10px;padding:6px 2px;font-size:11px;color:var(--muted)}
+.totals b{display:block;font:700 15px var(--mono);color:var(--fg);direction:ltr}
+.mini{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.mini button{padding:5px 8px;font-size:12px;flex:1}
 @media (prefers-reduced-motion:reduce){button:active{transform:none}}
 </style>
 </head>
@@ -128,11 +136,19 @@ details summary{cursor:pointer;font-weight:700;font-size:14px}
 
   <section class="card">
     <h2>الخطوط المفعّلة <small id="activeCount"></small></h2>
+    <div class="totals" id="totals"></div>
     <div class="tiles" id="activeLines"><p class="hint">ما في خطوط مفعّلة بالبوت.</p></div>
+    <div class="row" style="align-items:end;margin-top:10px">
+      <div style="flex:0 0 90px"><label for="allUsd">$</label><input id="allUsd" inputmode="decimal" placeholder="20"></div>
+      <button id="allTp" data-confirm="1">🎯 TP للكل</button>
+      <button id="allTrail" data-confirm="1">〰️ تريل للكل</button>
+      <button class="danger" data-cmd="close all" data-confirm="1">سكّر الكل</button>
+    </div>
+    <p class="hint">TP للكل: هدف بالدولار من الدخول لكل صفقة مفتوحة وجاية. تريل للكل: بيبلّش بعد ربح $ وبيلحق بنفس المسافة. كل زر بدّه كبستين.</p>
   </section>
 
   <section class="card">
-    <h2>لوحة الخطوط الجديدة <small>من السكانر، آخر 24 ساعة</small></h2>
+    <div class="switch" style="margin-bottom:8px"><h2 style="margin:0">لوحة الخطوط الجديدة</h2><button id="boardAuto" aria-pressed="false" data-confirm="1">يدوي</button></div>
     <div id="board"><p class="hint">ما في خطوط آخر 24 ساعة</p></div>
     <p class="hint">🟢 جديد والسوق قوي (6 س) · 🟡 انلمس أو السوق عادي · 🔴 خلص وقته أو انستعمل. الاحتياطي مش أضعف من الرئيسي (بحث 10). "فعّل" بيبعت الخط بإعدادات قسم "خط جديد".</p>
   </section>
@@ -208,6 +224,15 @@ details summary{cursor:pointer;font-weight:700;font-size:14px}
       <button aria-pressed="false" data-lot="0.03">0.03</button>
     </div>
     <button class="primary" id="sendLines" style="width:100%;margin-top:12px">فعّل الخط</button>
+    <details style="margin-top:12px">
+      <summary>بوكس يدوي (بدون خط)</summary>
+      <div class="row" style="margin-top:8px">
+        <div><label for="bTop">فوق</label><input id="bTop" inputmode="decimal" placeholder="4060.5"></div>
+        <div><label for="bBot">تحت</label><input id="bBot" inputmode="decimal" placeholder="4052.0"></div>
+      </div>
+      <button id="sendBox" style="width:100%;margin-top:8px">حط البوكس</button>
+      <p class="hint">بياخد إعدادات الدخول واللعبة واللوت من فوق. القانون نفسه: الستوب عالحافة التانية، وبيقلب.</p>
+    </details>
     <p class="hint">الخط سعر بس، بأي جهة، وكل خط لحاله. الافتراضي هون هو المفحوص: شمعة كاملة، دخول على إغلاق برّا. ولا طريقة دخول أو خروج مثبتة لسا.</p>
   </section>
 
@@ -274,11 +299,12 @@ function targetText(x){ return x.bt>0 ? (x.bl ? `قفل ${x.bt}$ ويلحق` : `
 function renderV2(st){
   lastV2 = st;
   const L=$("lights"); L.textContent="";
-  ["1h","3h","6h","12h","24h"].forEach(k=>{
+  (st.kind==="main" ? ["1h","3h","6h"] : ["1h","3h","6h","12h","24h"]).forEach(k=>{
     const c=(st.light&&st.light[k]&&st.light[k].colour)||"none";
     const d=el("div","light"); d.append(el("b",null,k.replace("h"," س")), el("div","dot "+c), document.createTextNode(NAMES[c]||c)); L.append(d);
   });
-  const dir={up:"صاعد (H1 وH4)",down:"هابط (H1 وH4)",mixed:"مختلط"}[st.direction_now&&st.direction_now.h1_h4]||"–";
+  const dir=(st.direction_now&&st.direction_now.text) || {up:"صاعد (H1 وH4)",down:"هابط (H1 وH4)",mixed:"مختلط"}[st.direction_now&&st.direction_now.h1_h4]||"–";
+  $("lights").style.gridTemplateColumns=st.kind==="main" ? "repeat(3,1fr)" : "repeat(5,1fr)";
   $("v2dir").textContent="الاتجاه الحالي: "+dir+" · وصف لهلأ، مش توقّع"+(st.normal_3h_range?" · حركة 3 ساعات العادية: "+st.normal_3h_range+"$":"");
   const old=(st.data_age_min||0)>10;
   $("v2age").textContent=(st.ts_utc||"").slice(11,16)+" UTC"+(old?" · ⚠️ داتا عمرها "+Math.round(st.data_age_min)+" دقيقة":"");
@@ -292,12 +318,32 @@ function renderV2(st){
   renderBoard(); renderActive();
 }
 
+function money(v){ return v==null ? "–" : (v>0?"+":"")+Number(v).toFixed(2); }
+function boxBlock(b){
+  const d=el("div","boxblk");
+  const top=el("div","top"); top.style.display="flex"; top.style.justifyContent="space-between"; top.style.alignItems="center";
+  top.append(el("span",null,`بوكس ${b.id} · ${b.st==="in_trade"?"بصفقة":"مستني"}`), el("span","pnl "+(b.pnl>0?"pos":b.pnl<0?"neg":""), money(b.pnl)+"$"));
+  const meta=el("div","meta",[`قلبات ${b.fl}`, `أعلى ${money(b.pk)}$`, b.bt>0?(b.bl?`قفل ${b.bt}$`:`يسكّر +${b.bt}$`):"بدون هدف بوكس",
+    b.tp>0?`TP ${b.tp}$`:"", b.tr>0?`تريل ${b.tr}$`:"", `لوت ${b.lot}`, `${b.bot}–${b.top}`].filter(Boolean).join(" · "));
+  const mini=el("div","mini");
+  mini.append(btn("سكّر 75",()=>send(`set ${b.id} close75`)), btn("قفل 100",()=>send(`set ${b.id} lock100`)), btn("ستوب ع الدخول",()=>send(`be ${b.id}`)));
+  const c=btn("✖ سكّر البوكس",()=>send(`close ${b.id}`),"danger"); c.dataset.confirm="1"; mini.append(c);
+  d.append(top, meta, mini); return d;
+}
+function renderTotals(){
+  const t=$("totals"); t.textContent="";
+  if(!eaSnap||!eaSnap.totals) return;
+  const x=eaSnap.totals;
+  [["اليوم",x.day_pnl],["المفتوح",x.open_pnl],["أحسن بوكس",x.best],["أسوأ بوكس",x.worst]].forEach(([k,v])=>{
+    const d=el("div"); d.append(el("b",(v>0?"pos":v<0?"neg":""),money(v)), document.createTextNode(k)); t.append(d); });
+}
 function renderActive(){
+  renderTotals();
   const box=$("activeLines"); box.textContent="";
   const list=eaSnap ? eaSnap.lines.filter(x=>["armed","paused","used"].includes(x.st)) : [];
   $("activeCount").textContent=eaSnap ? `${list.filter(x=>x.st==="armed").length} شغّال · ${list.filter(x=>x.st==="paused").length} موقوف` : "";
   if(!eaSnap){ box.append(el("p","hint","بستنّى البوت الجديد v1.20: القديم ما بيبعت قائمة خطوط.")); return; }
-  if(!list.length){ box.append(el("p","hint","ما في خطوط مفعّلة بالبوت.")); return; }
+  if(!list.length && !(eaSnap.boxes||[]).length){ box.append(el("p","hint","ما في خطوط ولا بوكسات مفعّلة بالبوت.")); return; }
   list.slice().reverse().forEach(x=>{
     const t=el("div","tile"), top=el("div","top"), left=el("div");
     left.style.display="flex"; left.style.alignItems="center"; left.style.gap="8px";
@@ -310,7 +356,19 @@ function renderActive(){
     if(x.st==="armed") acts.append(btn("⏸ وقّف",()=>send(`line pause ${x.id}`)));
     else acts.append(btn("▶️ إعادة تفعيل",()=>send(`line arm ${x.id}`)));
     const c=btn("✖ الغي",()=>send(`line cancel ${x.id}`),"danger"); c.dataset.confirm="1"; acts.append(c);
-    t.append(top, meta, acts); box.append(t);
+    t.append(top, meta, acts);
+    if(x.st!=="used"){                                    // the box this line will build
+      const mini=el("div","mini");
+      ["0.01","0.02","0.03"].forEach(l=>mini.append(btn(`لوت ${l}`,()=>send(`lineset ${x.id} lot ${l}`))));
+      mini.append(btn("سكّر 75",()=>send(`lineset ${x.id} close75`)), btn("قفل 100",()=>send(`lineset ${x.id} lock100`)));
+      t.append(mini);
+    }
+    const bx=(eaSnap.boxes||[]).find(b=>b.line===x.id);
+    if(bx) t.append(boxBlock(bx));
+    box.append(t);
+  });
+  (eaSnap.boxes||[]).filter(b=>!b.line || !eaSnap.lines.some(l=>l.id===b.line)).forEach(b=>{
+    const t=el("div","tile"); t.append(el("div","meta","بوكس يدوي")); t.append(boxBlock(b)); box.append(t);
   });
 }
 
@@ -335,8 +393,9 @@ function renderAutopilot(){
   if(!eaSnap){ $("eaPill").textContent="البوت: قديم v1.00"; $("eaPill").className="pill warn"; return; }
   $("eaPill").textContent=eaSnap.paused ? "البوت: موقوف" : "البوت: شغّال";
   $("eaPill").className="pill "+(eaSnap.paused?"warn":"live");
-  const on=!!eaSnap.settings.auto_line, b=$("apBox");
+  const on=!!eaSnap.settings.auto_line, b=$("apBox"), ba=$("boardAuto");
   b.setAttribute("aria-pressed", on?"true":"false"); if(armed!==b) b.textContent=on?"ON":"OFF";
+  ba.setAttribute("aria-pressed", on?"true":"false"); if(armed!==ba) ba.textContent=on?"أوتو":"يدوي";
   pressed("apTp","tp", eaSnap.tp||"off");
   pressed("apN","n", eaSnap.max_boxes);
   const c=eaSnap.caps; $("capD").placeholder=c[0]; $("capW").placeholder=c[1];
@@ -374,6 +433,13 @@ chips("modes","mode",v=>form.mode=v); chips("entries","entry",v=>form.entry=v); 
 $("apTp").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; send(`tp ${b.dataset.tp}`); pressed("apTp","tp",b.dataset.tp); };
 $("apN").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; send(`boxes ${b.dataset.n}`); pressed("apN","n",b.dataset.n); };
 $("apBox").onclick=()=>{ const b=$("apBox"), on=b.getAttribute("aria-pressed")==="true"; confirmTap(b,()=>send(`auto ${on?"off":"on"}`)); };
+$("boardAuto").onclick=()=>{ const b=$("boardAuto"), on=b.getAttribute("aria-pressed")==="true"; confirmTap(b,()=>send(`auto ${on?"off":"on"}`)); };
+const num=v=>/^\d+(\.\d+)?$/.test(v);
+$("allTp").onclick=()=>{ const v=$("allUsd").value.trim(); if(!num(v)){ toast("اكتب الهدف بالدولار"); return; } confirmTap($("allTp"),()=>send(`all tp ${v}`)); };
+$("allTrail").onclick=()=>{ const v=$("allUsd").value.trim(); if(!num(v)){ toast("اكتب مسافة التريل بالدولار"); return; } confirmTap($("allTrail"),()=>send(`all trail ${v} ${v}`)); };
+$("sendBox").onclick=()=>{ const a=$("bTop").value.trim().replace(",","."), b=$("bBot").value.trim().replace(",",".");
+  if(!num(a)||!num(b)||Number(a)<=Number(b)){ toast("فوق لازم يكون أعلى من تحت"); return; }
+  send(`box ${a} ${b} lot ${form.lot} ${form.entry==="touch"?"touch":"close"} ${form.game}`); };
 $("sendCaps").onclick=()=>{ const d=$("capD").value.trim(), w=$("capW").value.trim();
   if(!/^\d+(\.\d+)?$/.test(d)||!/^\d+(\.\d+)?$/.test(w)){ toast("اكتب الحدين"); return; } send(`caps ${d} ${w}`); };
 $("sendLines").onclick=()=>{
