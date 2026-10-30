@@ -90,7 +90,7 @@ button:disabled{opacity:.45}
   <section class="card" id="setup" hidden>
     <h2>الإعداد (مرة وحدة)</h2>
     <label for="code">الصق كود الإعداد</label>
-    <textarea id="code" placeholder="cmd-topic|alert-topic|PIN"></textarea>
+    <textarea id="code" dir="ltr" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="cmd-topic|alert-topic|PIN|v2-topic"></textarea>
     <p class="hint">الكود بيتخزن على تلفونك بس، مش بالصفحة.</p>
     <button class="primary" id="saveCode" style="width:100%;margin-top:8px">حفظ</button>
   </section>
@@ -310,7 +310,11 @@ function start(){
 }
 
 $("saveCode").onclick = ()=>{
-  const parts = $("code").value.trim().split("|").map(s=>s.trim());
+  // iPhone paste into an RTL box can add invisible direction marks or Arabic digits: keep only what the code can hold
+  const clean = $("code").value.replace(/[\u0660-\u0669]/g, d=>String(d.charCodeAt(0)-0x660))
+                                .replace(/[\u06F0-\u06F9]/g, d=>String(d.charCodeAt(0)-0x6F0))
+                                .replace(/[｜¦]/g, "|").replace(/[^A-Za-z0-9|\-]/g, "");
+  const parts = clean.split("|").filter(Boolean);
   if((parts.length!==3 && parts.length!==4) || !parts[0] || !parts[1] || !/^\d{4}$/.test(parts[2])){ toast("الكود مش كامل"); return; }
   try{ localStorage.setItem("boxcfg", JSON.stringify({c:parts[0],a:parts[1],p:parts[2],v:parts[3]||""})); }catch(e){ toast("التلفون ما سمح بالحفظ"); return; }
   start();
