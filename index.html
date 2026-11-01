@@ -136,16 +136,21 @@ details summary{cursor:pointer;font-weight:700;font-size:14px}
   </section>
 
   <section class="card">
-    <h2>الخطوط المفعّلة <small id="activeCount"></small></h2>
+    <h2>البوكسات <small id="boxCount"></small></h2>
     <div class="totals" id="totals"></div>
-    <div class="tiles" id="activeLines"><p class="hint">ما في خطوط مفعّلة بالبوت.</p></div>
+    <div class="tiles" id="boxList"><p class="hint">ما في بوكسات مفتوحة.</p></div>
     <div class="row" style="align-items:end;margin-top:10px">
       <div style="flex:0 0 90px"><label for="allUsd">$</label><input id="allUsd" inputmode="decimal" placeholder="20"></div>
       <button id="allTp" data-confirm="1">🎯 TP للكل</button>
       <button id="allTrail" data-confirm="1">〰️ تريل للكل</button>
       <button class="danger" data-cmd="close all" data-confirm="1">سكّر الكل</button>
     </div>
-    <p class="hint">TP للكل: هدف بالدولار من الدخول لكل صفقة مفتوحة وجاية. تريل للكل: بيبلّش بعد ربح $ وبيلحق بنفس المسافة. كل زر بدّه كبستين.</p>
+    <p class="hint">TP للكل: هدف بالدولار من الدخول لكل صفقة مفتوحة وجاية. تريل للكل: بيبلّش بعد ربح $ وبيلحق بنفس المسافة. نفس الرقم بيستعمله زر "تريل" بكرت البوكس. كل زر بدّه كبستين.</p>
+  </section>
+
+  <section class="card">
+    <h2>الخطوط المفعّلة <small id="activeCount"></small></h2>
+    <div class="tiles" id="activeLines"><p class="hint">ما في خطوط مفعّلة بالبوت.</p></div>
   </section>
 
   <section class="card">
@@ -155,27 +160,38 @@ details summary{cursor:pointer;font-weight:700;font-size:14px}
   </section>
 
   <section class="card">
-    <h2>AUTOPILOT <small>كله مطفي افتراضياً</small></h2>
+    <h2>AUTOPILOT <small>بيفتح بس · السكير بإيدك</small></h2>
 
     <div class="ap first">
-      <div class="switch"><h3>Box Autopilot: اختيار البوكسات بالضو</h3><button id="apBox" aria-pressed="false" data-confirm="1">OFF</button></div>
-      <p class="hint">لما يشتغل: كل خط أخضر من اللوحة (ضو 6 ساعات قوي) بينفعّل لحاله، بشمعة كاملة ودخول على إغلاق برّا، ولوت البوت.</p>
-      <div class="tested"><b>المفحوص بصراحة:</b> البوكسات وقت الضو القوي ربحت بفترتين من تلاتة على مستوى البوكس (بحوث 16 و20)، والضو هو الإشارة الوحيدة اللي ضلّت ثابتة (بحث 21). بس كحساب 252$ ما نجح (بحث 21). <b>مش مثبت.</b></div>
+      <div class="switch"><h3>فتح أوتوماتيكي لكل خطوط السكانر</h3><button id="apBox" aria-pressed="false" data-confirm="1">OFF</button></div>
+      <p class="hint">لما يشتغل: كل خط حقيقي من السكانر (رئيسي واحتياطي) بينفعّل لحاله وبيعمل بوكس. ما في سكير أوتوماتيكي ولا خروج ذكي: انت بتسكّر من كروت البوكسات تحت. الإعدادات بتتطبّق على الخطوط الجديدة بس.</p>
+      <p class="hint" id="apNow"></p>
     </div>
 
     <div class="ap">
-      <h3>TP Autopilot: الخروج</h3>
-      <div class="chips" id="apTp">
-        <button aria-pressed="true" data-tp="off">OFF</button>
-        <button aria-pressed="false" data-tp="smart">SMART</button>
-        <button aria-pressed="false" data-tp="close75">CLOSE_75</button>
-        <button aria-pressed="false" data-tp="lock100">LOCK_100</button>
+      <h3>لوت كل خط أوتو</h3>
+      <div class="chips" id="apLot">
+        <button data-lot="0.01">0.01</button><button data-lot="0.02">0.02</button><button data-lot="0.03">0.03</button><button data-lot="0.05">0.05</button><button data-lot="0.1">0.10</button>
       </div>
-      <p class="hint">بيتطبّق على البوكسات اللي بيفعّلها الأوتوبايلوت. البوكس بيضل يقلب بقانونه، والخروج بيسكّر البوكس كله على ربح بس.</p>
-      <div class="tested"><b>SMART</b> (الخروج الذكي): وقت فتح البوكس بيقرا حالة السوق. إذا التذبذب قوي بيخلّي البوكس يركض بتريل ATR على مجموعه بعد +15$، وإذا هادي بيسكّر على +75$. بالفحص (بحث 23): +80% بالنص الأول 2026 وما كان ولا مرة أسوأ، بس <b>مش مثبت</b>.<br>
-      <b>CLOSE_75</b> (يسكّر لما مجموع البوكس +75$ خلال 24 س): أحسن خروج من 24 قاعدة بالنص التاني 2025 (بحث 21)، ما انفحص لحاله بفترات تانية.<br>
-      <b>LOCK_100</b> (بعد +100$ بيقفل ربح وبيلحق): حساب بحدود البوت ربح بالتلات فترات على 0.01، +2,744$ بـ 15 شهر، بس نزل لـ −1,194$ (بحث 17)، وعلى 252$ انمسح بفترة (بحث 21).<br>
-      موديلات الخروج المتعلّمة فشلت (بحوث 19 و21). <b>ولا واحد مثبت.</b></div>
+      <h3 style="margin-top:10px">أقصى عدد بوكسات مع بعض</h3>
+      <div class="chips" id="apN">
+        <button data-n="1">1</button><button data-n="2">2</button><button data-n="3">3</button><button data-n="5">5</button><button data-n="10">10</button>
+      </div>
+      <h3 style="margin-top:10px">أي خطوط</h3>
+      <div class="chips" id="apWhich">
+        <button data-which="all">الكل</button><button data-which="hold">HOLD بس</button><button data-which="scalp">SCALP بس</button>
+      </div>
+      <h3 style="margin-top:10px">بيفتح لما ضو 6 ساعات (اختار واحد أو أكتر)</h3>
+      <div class="chips" id="apLights">
+        <button data-light="red">🔴 أحمر</button><button data-light="yellow">🟡 أصفر</button><button data-light="green">🟢 أخضر</button><button data-light="white">⚪ أبيض</button>
+      </div>
+      <h3 style="margin-top:10px">البوكس والدخول</h3>
+      <div class="chips" id="apMode">
+        <button data-mode="full">شمعة كاملة</button><button data-mode="rejection">رفض (ذيل)</button>
+      </div>
+      <div class="chips" id="apEntry" style="margin-top:6px">
+        <button data-entry="touch">لمس الحافة (سريع)</button><button data-entry="close">إغلاق برّا</button>
+      </div>
     </div>
 
     <div class="ap">
@@ -213,13 +229,6 @@ details summary{cursor:pointer;font-weight:700;font-size:14px}
     <div class="chips" id="entries">
       <button aria-pressed="false" data-entry="touch">لمس الحافة</button>
       <button aria-pressed="true" data-entry="close">إغلاق برّا</button>
-    </div>
-    <label style="margin-top:10px">لعبة البوكس (البوكس هو الصفقة)</label>
-    <div class="chips" id="games">
-      <button aria-pressed="true" data-game="smart">ذكي</button>
-      <button aria-pressed="false" data-game="close75">سكّر 75</button>
-      <button aria-pressed="false" data-game="lock100">قفل 100</button>
-      <button aria-pressed="false" data-game="gameoff">بدون</button>
     </div>
     <label style="margin-top:10px">لوت</label>
     <div class="chips" id="lots">
@@ -272,7 +281,7 @@ details summary{cursor:pointer;font-weight:700;font-size:14px}
 <script>
 const NTFY = "https://ntfy.sh";
 let cfg = null, es = null, es2 = null, armed = null, eaSnap = null, lastV2 = null;
-let form = {mode:"full", entry:"close", game:"smart", lot:"0.01"};
+let form = {mode:"full", entry:"close", game:"gameoff", lot:"0.01"};
 const $ = id => document.getElementById(id);
 const NAMES = {red:"ضعيف",yellow:"عادي",green:"قوي",white:"انفجار",none:"ما في قراءة"};
 const LST = {armed:"شغّال",paused:"موقوف",used:"عمل بوكس",cancelled:"ملغي",expired:"خلص وقته"};
@@ -334,16 +343,35 @@ function renderV2(st){
 }
 
 function money(v){ return v==null ? "–" : (v>0?"+":"")+Number(v).toFixed(2); }
+const KIND={M:"رئيسي",B:"احتياطي"};
 function boxBlock(b){
-  const d=el("div","boxblk");
+  const d=el("div","tile");
   const top=el("div","top"); top.style.display="flex"; top.style.justifyContent="space-between"; top.style.alignItems="center";
-  top.append(el("span",null,`بوكس ${b.id} · ${b.st==="in_trade"?"بصفقة":"مستني"}`), el("span","pnl "+(b.pnl>0?"pos":b.pnl<0?"neg":""), money(b.pnl)+"$"));
-  const meta=el("div","meta",[`قلبات ${b.fl}`, `أعلى ${money(b.pk)}$`, targetText(b),
-    b.tp>0?`TP ${b.tp}$`:"", b.tr>0?`تريل ${b.tr}$`:"", `لوت ${b.lot}`, `${b.bot}–${b.top}`].filter(Boolean).join(" · "));
+  const pv=el("span","pnl "+(b.pnl>0?"pos":b.pnl<0?"neg":""), money(b.pnl)+"$"); pv.dir="ltr";
+  top.append(el("span","px",`بوكس ${b.id}`), pv);
+  const ln=b.lp ? `خط ${b.lp}`+(b.k?` (${KIND[b.k]||b.k})`:"") : "بوكس يدوي";
+  d.append(top,
+    el("div","meta",[ln, b.c||"", `البوكس ${b.bot}–${b.top} = ${(b.top-b.bot).toFixed(2)}$`].filter(Boolean).join(" · ")),
+    el("div","meta",[`لوت ${b.lot}`, b.t?"دخول لمس":"دخول إغلاق برّا", b.m==="r"?"رفض":b.m==="f"?"شمعة كاملة":"يدوي", b.st==="in_trade"?"بصفقة هلأ":"مستني"].join(" · ")),
+    el("div","meta",[`المسكّر ${money(b.cl)}$`, `+ المفتوح ${money(b.fo)}$`, `= ${money(b.pnl)}$`, `قلبات ${b.fl}`, `أعلى ${money(b.pk)}$`, b.tr>0?`تريل ${b.tr}$`:""].filter(Boolean).join(" · ")));
   const mini=el("div","mini");
-  mini.append(btn("ذكي",()=>send(`set ${b.id} smart`)), btn("سكّر 75",()=>send(`set ${b.id} close75`)), btn("قفل 100",()=>send(`set ${b.id} lock100`)), btn("ستوب ع الدخول",()=>send(`be ${b.id}`)));
   const c=btn("✖ سكّر البوكس",()=>send(`close ${b.id}`),"danger"); c.dataset.confirm="1"; mini.append(c);
-  d.append(top, meta, mini); return d;
+  if(b.st==="in_trade"){
+    const t=btn("سكّر الصفقة بس",()=>send(`close ${b.id} trade`)); t.dataset.confirm="1"; mini.append(t);
+    [25,50,75].forEach(p=>{ const x=btn(`سكّر ${p}%`,()=>send(`part ${b.id} ${p}`)); x.dataset.confirm="1"; mini.append(x); });
+    const tr=btn("تريل",()=>{ const v=$("allUsd").value.trim(); if(!num(v)){ toast("اكتب مسافة التريل بالدولار فوق"); return; } send(`trail ${b.id} ${v} ${v}`); });
+    tr.dataset.confirm="1"; mini.append(tr);
+  }
+  d.append(mini);
+  if(b.st==="in_trade") d.append(el("p","hint","سكّر الصفقة بس: البوكس بيضل شغّال وإذا السعر برّا البوكس ممكن يدخل من جديد. اللوت 0.01 ما بينقسم (25/50/75% بدها 0.02 وأكتر)."));
+  return d;
+}
+function renderBoxes(){
+  const box=$("boxList"); box.textContent="";
+  const list=eaSnap ? (eaSnap.boxes||[]) : [];
+  $("boxCount").textContent=eaSnap ? `${list.length} مفتوح · أقصى ${eaSnap.max_boxes}` : "";
+  if(!list.length){ box.append(el("p","hint", eaSnap ? "ما في بوكسات مفتوحة." : "بستنّى حالة البوت…")); return; }
+  list.slice().sort((a,b)=>b.id-a.id).forEach(b=>box.append(boxBlock(b)));
 }
 function renderTotals(){
   const t=$("totals"); t.textContent="";
@@ -353,37 +381,31 @@ function renderTotals(){
     const d=el("div"); d.append(el("b",(v>0?"pos":v<0?"neg":""),money(v)), document.createTextNode(k)); t.append(d); });
 }
 function renderActive(){
-  renderTotals();
+  renderTotals(); renderBoxes();
   const box=$("activeLines"); box.textContent="";
   const list=eaSnap ? eaSnap.lines.filter(x=>["armed","paused","used"].includes(x.st)) : [];
   $("activeCount").textContent=eaSnap ? `${list.filter(x=>x.st==="armed").length} شغّال · ${list.filter(x=>x.st==="paused").length} موقوف` : "";
-  if(!eaSnap){ box.append(el("p","hint","بستنّى البوت الجديد v1.20: القديم ما بيبعت قائمة خطوط.")); return; }
-  if(!list.length && !(eaSnap.boxes||[]).length){ box.append(el("p","hint","ما في خطوط ولا بوكسات مفعّلة بالبوت.")); return; }
+  if(!eaSnap){ box.append(el("p","hint","بستنّى حالة البوت…")); return; }
+  if(!list.length){ box.append(el("p","hint","ما في خطوط مفعّلة بالبوت.")); return; }
   list.slice().reverse().forEach(x=>{
     const t=el("div","tile"), top=el("div","top"), left=el("div");
     left.style.display="flex"; left.style.alignItems="center"; left.style.gap="8px";
     const b=boardAt(x.px); left.append(el("div","dot sm "+(b?b.light:"none")), el("span","px",x.px));
-    top.append(left, el("span","badge "+(x.st==="armed"?"on":x.st==="paused"?"paused":"off"), LST[x.st]||x.st));
+    if(x.c) left.append(el("span","badge "+(x.c==="HOLD"?"hold":"scalp"), x.c));
+    const stt=x.st==="armed"?"مسلّح ✓":x.st==="paused"?(x.f?"موقوف (فلتر الأوتو)":"موقوف"):(LST[x.st]||x.st);
+    top.append(left, el("span","badge "+(x.st==="armed"?"on":x.st==="paused"?"paused":"off"), stt));
     const side=eaSnap.bid ? (x.px>eaSnap.bid?"فوق السعر":"تحت السعر")+" بـ "+Math.abs(x.px-eaSnap.bid).toFixed(2) : "";
-    const meta=el("div","meta",[`خط ${x.id}`, side, x.m==="r"?"رفض":"شمعة كاملة", x.t?"لمس":"إغلاق برّا", `لوت ${x.lot}`,
-      targetText(x), x.src==="a"?"أوتو":"", x.box?`بوكس ${x.box}`:""].filter(Boolean).join(" · "));
-    const acts=el("div","acts");
-    if(x.st==="armed") acts.append(btn("⏸ وقّف",()=>send(`line pause ${x.id}`)));
-    else acts.append(btn("▶️ إعادة تفعيل",()=>send(`line arm ${x.id}`)));
-    const c=btn("✖ الغي",()=>send(`line cancel ${x.id}`),"danger"); c.dataset.confirm="1"; acts.append(c);
-    t.append(top, meta, acts);
-    if(x.st!=="used"){                                    // the box this line will build
-      const mini=el("div","mini");
-      ["0.01","0.02","0.03"].forEach(l=>mini.append(btn(`لوت ${l}`,()=>send(`lineset ${x.id} lot ${l}`))));
-      mini.append(btn("ذكي",()=>send(`lineset ${x.id} smart`)), btn("سكّر 75",()=>send(`lineset ${x.id} close75`)), btn("قفل 100",()=>send(`lineset ${x.id} lock100`)));
-      t.append(mini);
+    const meta=el("div","meta",[`خط ${x.id}`, x.k?(KIND[x.k]||x.k):"", side, x.m==="r"?"رفض":"شمعة كاملة", x.t?"لمس":"إغلاق برّا", `لوت ${x.lot}`,
+      x.src==="a"?"أوتو":"يدوي", x.box?`بوكس ${x.box}`:""].filter(Boolean).join(" · "));
+    t.append(top, meta);
+    if(x.st!=="used"){
+      const acts=el("div","acts");
+      if(x.st==="armed") acts.append(btn("⏸ وقّف",()=>send(`line pause ${x.id}`)));
+      else acts.append(btn("▶️ سلّح",()=>send(`line arm ${x.id}`)));
+      const c=btn("✖ الغي",()=>send(`line cancel ${x.id}`),"danger"); c.dataset.confirm="1"; acts.append(c);
+      t.append(acts);
     }
-    const bx=(eaSnap.boxes||[]).find(b=>b.line===x.id);
-    if(bx) t.append(boxBlock(bx));
     box.append(t);
-  });
-  (eaSnap.boxes||[]).filter(b=>!b.line || !eaSnap.lines.some(l=>l.id===b.line)).forEach(b=>{
-    const t=el("div","tile"); t.append(el("div","meta","بوكس يدوي")); t.append(boxBlock(b)); box.append(t);
   });
 }
 
@@ -405,14 +427,21 @@ function renderBoard(){
 }
 
 function renderAutopilot(){
-  if(!eaSnap){ $("eaPill").textContent="البوت: قديم v1.00"; $("eaPill").className="pill warn"; return; }
+  if(!eaSnap){ $("eaPill").textContent="البوت: –"; $("eaPill").className="pill warn"; return; }
   $("eaPill").textContent=eaSnap.paused ? "البوت: موقوف" : "البوت: شغّال";
   $("eaPill").className="pill "+(eaSnap.paused?"warn":"live");
   const on=!!eaSnap.settings.auto_line, b=$("apBox"), ba=$("boardAuto");
   b.setAttribute("aria-pressed", on?"true":"false"); if(armed!==b) b.textContent=on?"ON":"OFF";
   ba.setAttribute("aria-pressed", on?"true":"false"); if(armed!==ba) ba.textContent=on?"أوتو":"يدوي";
-  pressed("apTp","tp", eaSnap.tp||"off");
   pressed("apN","n", eaSnap.max_boxes);
+  const ap=eaSnap.ap;
+  if(ap){
+    pressed("apLot","lot", Number(ap.lot)); pressed("apWhich","which", ap.which); pressed("apMode","mode", ap.mode); pressed("apEntry","entry", ap.entry);
+    [...$("apLights").children].forEach(x=>x.setAttribute("aria-pressed", ap.lights.includes(x.dataset.light)?"true":"false"));
+    [...$("apLot").children].forEach(x=>x.disabled=Number(x.dataset.lot)>Number(eaSnap.lot_cap)+1e-9);
+    const l6=eaSnap.l6||"none", ok=ap.lights.length===4 || ap.lights.includes(l6);
+    $("apNow").textContent=`ضو 6 ساعات هلأ: ${NAMES[l6]||l6} → ${ok?"مسموح يفتح":"ممنوع يفتح (الخطوط الأوتو بتستنّى)"} · سقف اللوت بالبوت ${eaSnap.lot_cap}`;
+  } else $("apNow").textContent="الجسر القديم ما بيبعت إعدادات الأوتوبايلوت.";
   const c=eaSnap.caps; $("capD").placeholder=c[0]; $("capW").placeholder=c[1];
   $("capHint").textContent=`الحد هلأ ${c[0]}/${c[1]}$ · أقصى من الشارت ${c[2]}/${c[3]}$ · لوت أقصى ${eaSnap.lot_cap}`;
 }
@@ -444,8 +473,16 @@ async function connectV2(){
 
 function lineCmd(px){ return `line ${px} lot ${form.lot} ${form.mode} ${form.entry} ${form.game}`; }
 function chips(id, attr, set){ $(id).onclick=e=>{ const b=e.target.closest("button"); if(!b||b.disabled) return; set(b.dataset[attr]); pressed(id, attr, b.dataset[attr]); }; }
-chips("modes","mode",v=>form.mode=v); chips("entries","entry",v=>form.entry=v); chips("games","game",v=>form.game=v); chips("lots","lot",v=>form.lot=v);
-$("apTp").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; send(`tp ${b.dataset.tp}`); pressed("apTp","tp",b.dataset.tp); };
+chips("modes","mode",v=>form.mode=v); chips("entries","entry",v=>form.entry=v); chips("lots","lot",v=>form.lot=v);
+$("apLot").onclick=e=>{ const b=e.target.closest("button"); if(!b||b.disabled) return; send(`ap lot ${b.dataset.lot}`); pressed("apLot","lot",b.dataset.lot); };
+$("apWhich").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; send(`ap which ${b.dataset.which}`); pressed("apWhich","which",b.dataset.which); };
+$("apMode").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; send(`ap mode ${b.dataset.mode==="full"?"full":"rej"}`); pressed("apMode","mode",b.dataset.mode); };
+$("apEntry").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; send(`ap entry ${b.dataset.entry}`); pressed("apEntry","entry",b.dataset.entry); };
+$("apLights").onclick=e=>{ const b=e.target.closest("button"); if(!b) return;
+  b.setAttribute("aria-pressed", b.getAttribute("aria-pressed")==="true"?"false":"true");
+  const on=[...$("apLights").children].filter(x=>x.getAttribute("aria-pressed")==="true").map(x=>x.dataset.light);
+  if(!on.length){ b.setAttribute("aria-pressed","true"); toast("لازم ضو واحد على الأقل"); return; }
+  clearTimeout(window.lightT); window.lightT=setTimeout(()=>send(`ap lights ${on.join(",")}`),1200); };
 $("apN").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; send(`boxes ${b.dataset.n}`); pressed("apN","n",b.dataset.n); };
 $("apBox").onclick=()=>{ const b=$("apBox"), on=b.getAttribute("aria-pressed")==="true"; confirmTap(b,()=>send(`auto ${on?"off":"on"}`)); };
 $("boardAuto").onclick=()=>{ const b=$("boardAuto"), on=b.getAttribute("aria-pressed")==="true"; confirmTap(b,()=>send(`auto ${on?"off":"on"}`)); };
