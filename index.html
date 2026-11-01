@@ -250,6 +250,29 @@ details summary{cursor:pointer;font-weight:700;font-size:14px}
   </section>
 
   <section class="card">
+    <div class="switch"><h2 style="margin:0">MAX % GROWTH <small>حماية الربح</small></h2><button id="grOn" aria-pressed="false" data-confirm="1">OFF</button></div>
+    <p class="hint">لما الإكويتي يوصل الرصيد المرجعي × (1 + الهدف %): يا بيسكّر كل صفقات البوت، يا بيحمي نسبة من ربح كل صفقة رابحة (الخسرانة بتنسكّر). بالحالتين البوكسات بتنلغي، والأوتو بيكمّل. صفقاتك اليدوية ما بتنلمس. المرجع بيرجع يبلّش من الرصيد الجديد لما تتسكّر هالصفقات.</p>
+    <div id="grBox" class="tile" style="margin-top:8px">
+      <div class="meta" id="grRef">المرجع: –</div>
+      <div style="height:10px;border-radius:6px;background:rgba(127,127,127,.25);margin:8px 0;overflow:hidden" dir="ltr"><div id="grBar" style="height:100%;width:0;background:#3fb950"></div></div>
+      <div class="meta" id="grProg">–</div>
+    </div>
+    <div class="row" style="align-items:end;margin-top:10px">
+      <div><label for="grPct">الهدف %</label><input id="grPct" inputmode="decimal" placeholder="100"></div>
+      <button id="grPctSave" style="flex:0 0 72px">حفظ</button>
+    </div>
+    <label style="margin-top:10px">لما يوصل الهدف</label>
+    <div class="chips" id="grMode">
+      <button data-mode="close">سكّر الكل</button><button data-mode="secure">احمي نسبة</button>
+    </div>
+    <div class="row" style="align-items:end;margin-top:8px">
+      <div><label for="grKeep">نسبة الحماية %</label><input id="grKeep" inputmode="decimal" placeholder="80"></div>
+      <button id="grKeepSave" style="flex:0 0 72px">حفظ</button>
+    </div>
+    <button id="grReset" data-confirm="1" style="width:100%;margin-top:10px">↺ المرجع = الرصيد هلأ</button>
+  </section>
+
+  <section class="card">
     <h2>البوت</h2>
     <pre id="status">اكبس "حالة"</pre>
     <div class="grid" style="margin-top:10px">
@@ -446,9 +469,21 @@ function renderAutopilot(){
   $("capHint").textContent=`الحد هلأ ${c[0]}/${c[1]}$ · أقصى من الشارت ${c[2]}/${c[3]}$ · لوت أقصى ${eaSnap.lot_cap}`;
 }
 
+function renderGrowth(){
+  const g=eaSnap&&eaSnap.gr, b=$("grOn");
+  if(!g){ $("grRef").textContent="البوت القديم ما فيه حماية النمو (بدها v1.51)."; return; }
+  b.setAttribute("aria-pressed", g.on?"true":"false"); if(armed!==b) b.textContent=g.on?"ON":"OFF";
+  pressed("grMode","mode", g.m);
+  $("grPct").placeholder=g.pct; $("grKeep").placeholder=g.k;
+  $("grRef").textContent=`المرجع ${Number(g.ref).toFixed(2)}$ · الهدف +${g.pct}% = ${Number(g.tgt).toFixed(2)}$ · ${g.m==="secure"?`احمي ${g.k}%`:"سكّر الكل"}`;
+  const eq=Number(g.eq||0), span=g.tgt-g.ref, done=span>0 ? Math.max(0,Math.min(1,(eq-g.ref)/span)) : 0;
+  $("grBar").style.width=(done*100).toFixed(1)+"%";
+  $("grProg").textContent = g.ph ? `🚀 انلمس الهدف: بستنّى ${g.fw} صفقة تتسكّر، بعدين المرجع بيصير الرصيد الجديد.`
+    : `الإكويتي ${eq.toFixed(2)}$ · ${(done*100).toFixed(0)}% من الطريق · باقي ${Math.max(0,g.tgt-eq).toFixed(2)}$`+(g.on?"":" · (مطفي)");
+}
 function addFeed(m){
   if(!m || m.event!=="message") return;
-  if(m.title==="STATE"){ try{ eaSnap=JSON.parse(m.message); renderActive(); renderBoard(); renderAutopilot(); }catch(e){} return; }
+  if(m.title==="STATE"){ try{ eaSnap=JSON.parse(m.message); renderActive(); renderBoard(); renderAutopilot(); renderGrowth(); }catch(e){} return; }
   if((m.title||"").includes("📊")) $("status").textContent=m.message;
   const li=el("li"), t=new Date(m.time*1000).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
   li.append(el("b",null,(m.title||"BOX")+" "), el("time",null,t), el("br"), document.createTextNode(m.message||""));
@@ -474,6 +509,13 @@ async function connectV2(){
 function lineCmd(px){ return `line ${px} lot ${form.lot} ${form.mode} ${form.entry} ${form.game}`; }
 function chips(id, attr, set){ $(id).onclick=e=>{ const b=e.target.closest("button"); if(!b||b.disabled) return; set(b.dataset[attr]); pressed(id, attr, b.dataset[attr]); }; }
 chips("modes","mode",v=>form.mode=v); chips("entries","entry",v=>form.entry=v); chips("lots","lot",v=>form.lot=v);
+$("grOn").onclick=()=>{ const b=$("grOn"), on=b.getAttribute("aria-pressed")==="true"; confirmTap(b,()=>send(`grow ${on?"off":"on"}`)); };
+$("grReset").onclick=()=>confirmTap($("grReset"),()=>send("grow reset"));
+$("grMode").onclick=e=>{ const b=e.target.closest("button"); if(!b) return;
+  if(b.dataset.mode==="secure"){ const k=$("grKeep").value.trim()||$("grKeep").placeholder||"80"; send(`grow mode secure ${k}`); } else send("grow mode close");
+  pressed("grMode","mode",b.dataset.mode); };
+$("grPctSave").onclick=()=>{ const v=$("grPct").value.trim(); if(!num(v)||Number(v)<1||Number(v)>1000){ toast("الهدف بين 1 و 1000 %"); return; } send(`grow pct ${v}`); };
+$("grKeepSave").onclick=()=>{ const v=$("grKeep").value.trim(); if(!num(v)||Number(v)<10||Number(v)>95){ toast("النسبة بين 10 و 95 %"); return; } send(`grow mode secure ${v}`); pressed("grMode","mode","secure"); };
 $("apLot").onclick=e=>{ const b=e.target.closest("button"); if(!b||b.disabled) return; send(`ap lot ${b.dataset.lot}`); pressed("apLot","lot",b.dataset.lot); };
 $("apWhich").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; send(`ap which ${b.dataset.which}`); pressed("apWhich","which",b.dataset.which); };
 $("apMode").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; send(`ap mode ${b.dataset.mode==="full"?"full":"rej"}`); pressed("apMode","mode",b.dataset.mode); };
@@ -509,7 +551,7 @@ document.querySelectorAll("[data-box]").forEach(b=> b.onclick=()=>{
 function start(){
   load();
   $("setup").hidden=!!cfg; $("app").hidden=!cfg;
-  if(cfg){ connect(); connectV2(); renderActive(); renderAutopilot(); }
+  if(cfg){ connect(); connectV2(); renderActive(); renderAutopilot(); renderGrowth(); }
 }
 $("saveCode").onclick=()=>{
   const parts=$("code").value.trim().split("|").map(s=>s.trim());
