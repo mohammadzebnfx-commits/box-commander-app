@@ -169,7 +169,12 @@ details summary{cursor:pointer;font-weight:700;font-size:14px}
     </div>
 
     <div class="ap">
-      <h3>لوت كل خط أوتو</h3>
+      <h3>أي خطوط من السكانر</h3>
+      <div class="chips" id="apKinds">
+        <button data-kinds="main">الرئيسي بس</button><button data-kinds="all">الرئيسي + الاحتياطي</button>
+      </div>
+      <p class="hint">الاحتياطي مش عشوائي: هو بنية v1 الحقيقية على الجهة التانية. هالخيار بيتطبّق على الخطوط الجديدة بس؛ الخط المسلّح بيضل لحد ما تلغيه.</p>
+      <h3 style="margin-top:10px">لوت كل خط أوتو</h3>
       <div class="chips" id="apLot">
         <button data-lot="0.01">0.01</button><button data-lot="0.02">0.02</button><button data-lot="0.03">0.03</button><button data-lot="0.05">0.05</button><button data-lot="0.1">0.10</button>
       </div>
@@ -459,7 +464,7 @@ function renderAutopilot(){
   pressed("apN","n", eaSnap.max_boxes);
   const ap=eaSnap.ap;
   if(ap){
-    pressed("apLot","lot", Number(ap.lot)); pressed("apWhich","which", ap.which); pressed("apMode","mode", ap.mode); pressed("apEntry","entry", ap.entry);
+    pressed("apKinds","kinds", ap.kinds||"main"); pressed("apLot","lot", Number(ap.lot)); pressed("apWhich","which", ap.which); pressed("apMode","mode", ap.mode); pressed("apEntry","entry", ap.entry);
     [...$("apLights").children].forEach(x=>x.setAttribute("aria-pressed", ap.lights.includes(x.dataset.light)?"true":"false"));
     [...$("apLot").children].forEach(x=>x.disabled=Number(x.dataset.lot)>Number(eaSnap.lot_cap)+1e-9);
     const l6=eaSnap.l6||"none", ok=ap.lights.length===4 || ap.lights.includes(l6);
@@ -481,9 +486,17 @@ function renderGrowth(){
   $("grProg").textContent = g.ph ? `🚀 انلمس الهدف: بستنّى ${g.fw} صفقة تتسكّر، بعدين المرجع بيصير الرصيد الجديد.`
     : `الإكويتي ${eq.toFixed(2)}$ · ${(done*100).toFixed(0)}% من الطريق · باقي ${Math.max(0,g.tgt-eq).toFixed(2)}$`+(g.on?"":" · (مطفي)");
 }
+// The bridge carries the v2 board inside STATE: use it when the v2 stream is missing or older.
+function boardFromState(b){
+  if(!b || !b.ts || (lastV2 && (lastV2.ts_utc||"") >= b.ts)) return;
+  const light={}; Object.keys(b.lt||{}).forEach(h=>light[h]={colour:b.lt[h]});
+  renderV2({ts_utc:b.ts, light, direction_now:{h1_h4:b.dir}, s6_now:b.s6,
+    lines:(b.lines||[]).map(x=>({line:x.l, k:x.k, status:{w:"waiting",t:"touched",e:"ended"}[x.s]||x.s, call:x.c, light:x.lt,
+      side:x.sd==="a"?"above":"below", declared_utc:x.d?"0000-00-00T"+x.d:"", tp_usd:x.tp, near_target:x.nt}))});
+}
 function addFeed(m){
   if(!m || m.event!=="message") return;
-  if(m.title==="STATE"){ try{ eaSnap=JSON.parse(m.message); renderActive(); renderBoard(); renderAutopilot(); renderGrowth(); }catch(e){} return; }
+  if(m.title==="STATE"){ try{ eaSnap=JSON.parse(m.message); boardFromState(eaSnap.b2); renderActive(); renderBoard(); renderAutopilot(); renderGrowth(); }catch(e){} return; }
   if((m.title||"").includes("📊")) $("status").textContent=m.message;
   const li=el("li"), t=new Date(m.time*1000).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
   li.append(el("b",null,(m.title||"BOX")+" "), el("time",null,t), el("br"), document.createTextNode(m.message||""));
@@ -517,6 +530,7 @@ $("grMode").onclick=e=>{ const b=e.target.closest("button"); if(!b) return;
 $("grPctSave").onclick=()=>{ const v=$("grPct").value.trim(); if(!num(v)||Number(v)<1||Number(v)>1000){ toast("الهدف بين 1 و 1000 %"); return; } send(`grow pct ${v}`); };
 $("grKeepSave").onclick=()=>{ const v=$("grKeep").value.trim(); if(!num(v)||Number(v)<10||Number(v)>95){ toast("النسبة بين 10 و 95 %"); return; } send(`grow mode secure ${v}`); pressed("grMode","mode","secure"); };
 $("apLot").onclick=e=>{ const b=e.target.closest("button"); if(!b||b.disabled) return; send(`ap lot ${b.dataset.lot}`); pressed("apLot","lot",b.dataset.lot); };
+$("apKinds").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; send(`ap kinds ${b.dataset.kinds}`); pressed("apKinds","kinds",b.dataset.kinds); };
 $("apWhich").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; send(`ap which ${b.dataset.which}`); pressed("apWhich","which",b.dataset.which); };
 $("apMode").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; send(`ap mode ${b.dataset.mode==="full"?"full":"rej"}`); pressed("apMode","mode",b.dataset.mode); };
 $("apEntry").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; send(`ap entry ${b.dataset.entry}`); pressed("apEntry","entry",b.dataset.entry); };
