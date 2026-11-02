@@ -154,6 +154,12 @@ details summary{cursor:pointer;font-weight:700;font-size:14px}
   </section>
 
   <section class="card">
+    <h2>سجل الخطوط <small>الأحدث فوق · UTC</small></h2>
+    <div id="lineLog"><p class="hint">بستنّى الجسر الجديد…</p></div>
+    <p class="hint">كل خط طلّعه السكانر (رئيسي واحتياطي): انسلّح ولا لأ وليش، ونتيجة بوكسه. السجل الكامل على الماك: BOX-COMMANDER/logs/lines</p>
+  </section>
+
+  <section class="card">
     <div class="switch" style="margin-bottom:8px"><h2 style="margin:0">لوحة الخطوط الجديدة</h2><button id="boardAuto" aria-pressed="false" data-confirm="1">يدوي</button></div>
     <div id="board"><p class="hint">ما في خطوط آخر 24 ساعة</p></div>
     <p class="hint">🟢 جديد والسوق قوي (6 س) · 🟡 انلمس أو السوق عادي · 🔴 خلص وقته أو انستعمل. الاحتياطي مش أضعف من الرئيسي (بحث 10). "فعّل" بيبعت الخط بإعدادات قسم "خط جديد".</p>
@@ -494,9 +500,22 @@ function boardFromState(b){
     lines:(b.lines||[]).map(x=>({line:x.l, k:x.k, status:{w:"waiting",t:"touched",e:"ended"}[x.s]||x.s, call:x.c, light:x.lt,
       side:x.sd==="a"?"above":"below", declared_utc:x.d?"0000-00-00T"+x.d:"", tp_usd:x.tp, near_target:x.nt}))});
 }
+const WHY={"main only":"رئيسي بس","auto off":"الأوتو مطفي","owner cancelled":"انلغى بإيدك","expired (v1 life over)":"خلص عمره",
+  "paused (filter)":"موقوف بالفلتر","paused":"موقوف","filter (HOLD/SCALP or 6 h l":"الفلتر","scanner board stale":"السكانر قديم"};
+function renderLineLog(){
+  const box=$("lineLog"); if(!eaSnap||!eaSnap.lh) return; box.textContent="";
+  if(!eaSnap.lh.length){ box.append(el("p","hint","ما في خطوط لسا.")); return; }
+  eaSnap.lh.forEach(([d,px,k,a,res,why])=>{
+    const r=el("div","ln"), mid=el("div","grow");
+    const arm=a==="a"?"انسلّح أوتو":a==="o"?"انسلّح بإيدك":"ما انسلّح";
+    mid.append(el("div","px",px), el("div","sub",[d, k==="M"?"رئيسي":"احتياطي", arm, why?(WHY[why]||why):""].filter(Boolean).join(" · ")));
+    const v=el("span","pnl "+(res>0?"pos":res<0?"neg":""), res==null?"–":money(res)+"$"); v.dir="ltr";
+    r.append(el("div","dot sm "+(a==="-"?"none":"green")), mid, v); box.append(r);
+  });
+}
 function addFeed(m){
   if(!m || m.event!=="message") return;
-  if(m.title==="STATE"){ try{ eaSnap=JSON.parse(m.message); boardFromState(eaSnap.b2); renderActive(); renderBoard(); renderAutopilot(); renderGrowth(); }catch(e){} return; }
+  if(m.title==="STATE"){ try{ eaSnap=JSON.parse(m.message); boardFromState(eaSnap.b2); renderActive(); renderBoard(); renderAutopilot(); renderGrowth(); renderLineLog(); }catch(e){} return; }
   if((m.title||"").includes("📊")) $("status").textContent=m.message;
   const li=el("li"), t=new Date(m.time*1000).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
   li.append(el("b",null,(m.title||"BOX")+" "), el("time",null,t), el("br"), document.createTextNode(m.message||""));
@@ -565,7 +584,7 @@ document.querySelectorAll("[data-box]").forEach(b=> b.onclick=()=>{
 function start(){
   load();
   $("setup").hidden=!!cfg; $("app").hidden=!cfg;
-  if(cfg){ connect(); connectV2(); renderActive(); renderAutopilot(); renderGrowth(); }
+  if(cfg){ connect(); connectV2(); renderActive(); renderAutopilot(); renderGrowth(); renderLineLog(); }
 }
 $("saveCode").onclick=()=>{
   const parts=$("code").value.trim().split("|").map(s=>s.trim());
