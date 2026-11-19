@@ -723,7 +723,10 @@ function renderAutopilot(){
     [...$("apLights").children].forEach(x=>x.setAttribute("aria-pressed", ap.lights.includes(x.dataset.light)?"true":"false"));
     [...$("apLot").children].forEach(x=>x.disabled=Number(x.dataset.lot)>Number(eaSnap.lot_cap)+1e-9);
     const l6=eaSnap.l6||"none", ok=ap.lights.length===4 || ap.lights.includes(l6);
-    $("apNow").textContent=`ضو 6 ساعات هلأ: ${NAMES[l6]||l6} → ${ok?"مسموح يفتح":"ممنوع يفتح (الخطوط الأوتو بتستنّى)"} · سقف اللوت بالبوت ${eaSnap.lot_cap}`;
+    const xp=eaSnap.xp, gate=ap.gate||"light";
+    const xs = !xp ? "ساعة الانفجار: مش شغالة لسا" : (xp.st ? "ساعة الانفجار: قديمة/واقفة" : (xp.b ? `ساعة الانفجار + الضو: قوي ✅ (S6 ${xp.s6}، ساعة ${xp.p})` : `ساعة الانفجار: مش قوي (S6 ${xp.s6}، ساعة ${xp.p})`));
+    const ok2 = ok && (gate!=="both" || (xp && !xp.st && xp.b));
+    $("apNow").textContent=`ضو 6 ساعات هلأ: ${NAMES[l6]||l6} · ${xs} · البوابة: ${gate==="both"?"ضو + ساعة":"ضو بس"} · تقريب ${ap.shift??0}$ → ${ok2?"مسموح يفتح":"ممنوع يفتح (الخطوط الأوتو بتستنّى)"} · سقف اللوت بالبوت ${eaSnap.lot_cap}`;
     $("apSum").textContent=`${on?"ON":"OFF"} · لوت ${ap.lot} · ${{all:"الكل",hold:"HOLD",scalp:"SCALP"}[ap.which]||ap.which} · ${ap.kinds==="all"?"+احتياطي":"رئيسي"}`;
   } else { $("apNow").textContent="الجسر القديم ما بيبعت إعدادات الأوتوبايلوت."; $("apSum").textContent=on?"ON":"OFF"; }
   const c=eaSnap.caps; $("capD").placeholder=c[0]; $("capW").placeholder=c[1];
