@@ -639,8 +639,8 @@ function pad(n){ return String(n).padStart(2,"0"); }
 function ago(ms){ const s=Math.max(0,Math.round(ms/1000)); return s<60 ? s+" ث" : s<3600 ? Math.floor(s/60)+" د" : s<86400 ? Math.floor(s/3600)+" س "+Math.floor(s%3600/60)+" د" : Math.floor(s/86400)+" يوم "+Math.floor(s%86400/3600)+" س"; }
 
 /* ---- time: lines and market in MT5 server time (UTC + offset), labelled; ages are relative ---- */
-function srvOff(){ return S && Number.isFinite(S.so) ? S.so : SRV_ASSUMED_S; }
-function tzLabel(){ const h=srvOff()/3600; return "توقيت MT5 (UTC"+(h>=0?"+":"")+h+")"; }
+function srvOff(){ return -new Date().getTimezoneOffset()*60; }   // owner 11-20: show every time in the PHONE'S own time zone
+function tzLabel(){ return "توقيت جوالك"; }
 function hmMs(ms){ const d=new Date(ms+srvOff()*1000); return pad(d.getUTCHours())+":"+pad(d.getUTCMinutes()); }
 function hmSrv(hm){ const m=/^(\d\d):(\d\d)$/.exec(hm||""); if(!m) return hm||"";
   const t=((+m[1]*60 + +m[2] + Math.round(srvOff()/60))%1440+1440)%1440; return pad(Math.floor(t/60))+":"+pad(t%60); }
@@ -1005,9 +1005,9 @@ function addForm(c){
   w.append(chipRow("البوكس", [["full","شمعة كاملة"],["rej","رفض (ذيل)"]], f.mode, v=>{ f.mode=v; re(); }));
   w.append(chipRow("الدخول", [["close","إغلاق برّا"],["touch","لمس الحافة"]], f.entry, v=>{ f.entry=v; re(); }));
   const px=f.px==="shift"?spx:c.line, ttl=c.endT&&c.endT>Date.now()?Math.max(0.1,(c.endT-Date.now())/3600000).toFixed(1):null;
-  const cmd=`line ${px.toFixed(2)} lot ${f.lot} ${f.mode} ${f.entry} gameoff`+(ttl?` ttl ${ttl}`:"");
+  const cmd=`line ${px.toFixed(2)} lot ${f.lot} ${f.mode} ${f.entry} gameoff`;   // owner 11-20: no time limit on a line
   w.append(cmdLine([["الأمر",cmd]]));
-  w.append(el("p","hint", "بينحط كخط يدوي: الأوتو ما بيوقفه بالفلتر. "+(ttl?`بينتهي مع خط السكانر (بعد ${ttl} س).`:"وقت انتهاء خط السكانر مش معروف: الخط بيضل لحد ما ينلمس أو تلغيه.")));
+  w.append(el("p","hint", "بينحط كخط يدوي: الأوتو ما بيوقفه بالفلتر. "+"بدون وقت انتهاء: الخط بيضل لحد ما ينلمس أو تلغيه."));
   const go=btn("▶️ فعّل الخط بالبوت",()=>ask({title:"فعّل خط السكانر بالبوت",
     body:`خط السكانر ${p2(c.line)} (${[...c.kinds].map(k=>KIND[k]).join(" + ")}${c.call?" · "+c.call:""})\nالبوت رح يستنّى على ${p2(px)}\nلوت ${f.lot} · ${MODEN[f.mode]} · ${f.entry==="touch"?"دخول لمس":"إغلاق برّا"}`,
     warn: S&&S.paused?"البوت موقوف (pause): الخط بيتحط بس ما بيتراقب لحد «كمّل».":"", cmd, run:async()=>{ if(await send(cmd)){ LN.open[c.key]=null; renderLines(); } }}),"primary");
@@ -1082,7 +1082,8 @@ function lineCard(c){
   if(cl.cat==="touched" && cl.box){ const b=cl.box, s=el("div","lc-box lv"); s.append(`بوكس ${b.id} · ${b.st==="in_trade"?"بصفقة هلأ":"مستني دخول"} · `, numEl("num "+sgn(b.pnl),money(b.pnl))); d.append(s); }
   // actions valid for this state only, each with its exact command
   const a=el("div","acts two"), cmds=[];
-  if(cl.cat==="notbot" || (cl.cat==="ended" && !live && c.kind!=="bot" && c.line)){   // owner 11-20: any line not in the bot can be armed
+  if(c.kind==="bot" && !c.line && e && e.px) c.line=e.px;   // owner 11-20: a line that left the bot can be armed again
+  if(cl.cat==="notbot" || (cl.cat==="ended" && !live && c.line)){   // owner 11-20: any line not in the bot can be armed
     const open=LN.open[c.key]==="add";
     a.classList.remove("two"); a.style.gridTemplateColumns="1fr";
     a.append(btn(open?"✕ سكّر":"▶️ فعّل بالبوت",()=>{ LN.open[c.key]=open?null:"add"; renderLines(); }, open?"":"primary"));
