@@ -903,7 +903,7 @@ function boardLines(){
 }
 const apS=()=>(S&&S.ap)||{};
 const shiftNow=()=>Number(apS().shift)||0;
-function shiftedPx(line,side){ const sh=shiftNow(); return Math.round((sh>0&&side==="below"?line+sh:sh>0&&side==="above"?line-sh:line)*100)/100; }
+function shiftedPx(line,side){ const sh=shiftNow(), bid=S&&S.bid?Number(S.bid):0; const dir = bid ? (line<bid?1:line>bid?-1:0) : (side==="below"?1:side==="above"?-1:0); return Math.round((sh>0?line+dir*sh:line)*100)/100; }  // owner 11-20: TOWARD THE CURRENT PRICE
 // The bridge's ap_allows() as reasons: [] = the autopilot filter lets this line in now.
 function filterWhy(call){
   const R=[]; if(!S) return R; const ap=apS(), L=ap.lights||[], l6=S.l6||"none";
@@ -1082,7 +1082,7 @@ function lineCard(c){
   if(cl.cat==="touched" && cl.box){ const b=cl.box, s=el("div","lc-box lv"); s.append(`بوكس ${b.id} · ${b.st==="in_trade"?"بصفقة هلأ":"مستني دخول"} · `, numEl("num "+sgn(b.pnl),money(b.pnl))); d.append(s); }
   // actions valid for this state only, each with its exact command
   const a=el("div","acts two"), cmds=[];
-  if(cl.cat==="notbot"){
+  if(cl.cat==="notbot" || (cl.cat==="ended" && !live && c.kind!=="bot" && c.line)){   // owner 11-20: any line not in the bot can be armed
     const open=LN.open[c.key]==="add";
     a.classList.remove("two"); a.style.gridTemplateColumns="1fr";
     a.append(btn(open?"✕ سكّر":"▶️ فعّل بالبوت",()=>{ LN.open[c.key]=open?null:"add"; renderLines(); }, open?"":"primary"));
