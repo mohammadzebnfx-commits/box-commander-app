@@ -243,6 +243,10 @@ body[data-fresh="stale"] .stp{background:transparent!important;border:1.5px soli
 .lnform .fh{font-size:13px;font-weight:800}
 .lnform .fld label{margin-bottom:3px}
 .lnform .chips button{min-height:44px}
+.lhrow{border-top:1px solid var(--line)}
+.lhrow:first-child{border-top:none}
+.lhrow>.cmp{border-top:none}
+.lhrow>.lnform{padding-bottom:10px}
 details.endgrp{margin-top:10px}
 details.endgrp>summary{cursor:pointer;list-style:none;font-size:13px;font-weight:800;color:var(--muted);min-height:44px;display:flex;align-items:center;border-top:1px solid var(--line)}
 details.endgrp>summary::-webkit-details-marker{display:none}
@@ -625,6 +629,23 @@ const LST={armed:"مسلّح",paused:"موقوف",used:"استُعمل",cancelle
 const KIND={M:"رئيسي",B:"احتياطي"};
 const WHY={"main only":"رئيسي بس","auto off":"الأوتو مطفي","owner cancelled":"انلغى بإيدك","expired (v1 life over)":"خلص عمره",
   "paused (filter)":"موقوف بالفلتر","paused":"موقوف","filter (HOLD/SCALP or 6 h l":"الفلتر","scanner board stale":"السكانر قديم"};
+// v4.3 (owner 11-20): every reason in the line history in Arabic. The bridge cuts the reason to 22 characters, so prefixes.
+const WHYST={touched:"انلمس",ended:"خلص وقته",waiting:"كان بيستنّى",expired:"خلص وقته",cancelled:"انلغى"};
+function whyAr(w){
+  w=String(w||"").trim(); if(!w) return ""; if(WHY[w]) return WHY[w];
+  let m;
+  if((m=/^EA refused:?\s*(.*)$/i.exec(w))) return "البوت رفضه"+(m[1]?": "+m[1]:"");
+  if((m=/^(\w+) before arm/i.exec(w))) return (WHYST[m[1].toLowerCase()]||m[1])+" قبل ما يتسلّح";
+  if(/^filter/i.test(w)) return "الفلتر (HOLD/SCALP أو ضو 6 س)";
+  if(/^expired/i.test(w)) return "خلص عمره";
+  if(/^paused \(f/i.test(w)) return "موقوف بالفلتر";
+  if(/^paused/i.test(w)) return "موقوف";
+  if(/^scanner board/i.test(w)) return "السكانر قديم";
+  if(/^owner canc/i.test(w)) return "انلغى بإيدك";
+  if(/^main only/i.test(w)) return "رئيسي بس";
+  if(/^auto off/i.test(w)) return "الأوتو مطفي";
+  return w;
+}
 
 function load(){ try{ cfg=JSON.parse(localStorage.getItem("boxcfg")||"null"); }catch(e){ cfg=null; } }
 function toast(t){ const e=$("toast"); e.textContent=t; e.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>e.hidden=true,2600); }
@@ -941,9 +962,33 @@ function buildCards(){
   pass("guess",(c,b)=>{ if(b.src!=="a" || (b.k && !c.kinds.has(b.k))) return false; const d=c.side==="below"?b.px-c.line:c.side==="above"?c.line-b.px:-1; return d>0.004 && d<=5.01; }, true);
   const lr=b=>b.st==="armed"||b.st==="paused"?0:b.st==="used"?1:2;
   scan.forEach(c=>{ c.bots.sort((a,b)=>lr(a)-lr(b) || b.id-a.id); c.ea=c.bots[0]||null; c.prev=c.bots.slice(1); });
-  const manual=pool.filter(b=>!claimed.has(b.id)).map(b=>({kind:"bot", key:"b"+b.id, line:b.px, side:"", kinds:new Set(b.k?[b.k]:[]), k:b.k||"",
-    call:b.c||null, light:null, decT:null, endT:null, ea:Object.assign({how:"self"},b), prev:[]}));
+  const O=scanOrigins();
+  const manual=pool.filter(b=>!claimed.has(b.id)).map(b=>{ const sc=originOf(b,O), k=b.k||(sc&&sc.k)||"";
+    return {kind:"bot", key:"b"+b.id, line:b.px, side:"", scan:sc, kinds:new Set(k?[k]:[]), k,
+      call:b.c||(sc&&sc.call)||null, light:null, decT:null, endT:null, ea:Object.assign({how:"self"},b), prev:[]}; });
   return {scan, manual};
+}
+// v4.3 (owner 11-20): the SCANNER line a bot-only line came from. STATE carries no armed-price memory (autopilot_memory
+// px stays in the bridge), so: the board (b2) + the line history (lh) as candidates; exact price first, else
+// |bot − scanner| about the shift (<= 1.6 $); the bot line's own main/backup (bridge map k) must agree when both are known.
+function scanOrigins(){
+  const o=[];
+  boardLines().forEach(x=>o.push({line:x.line, k:x.k||"", side:x.side||"", call:x.call||null, src:"board"}));
+  ((S&&S.lh)||[]).forEach(r=>{ const px=Number(r&&r[1]), k=(r&&r[2])||"";
+    if(Number.isFinite(px) && !o.some(y=>Math.abs(y.line-px)<0.005 && y.k===k)) o.push({line:px, k, side:"", call:null, src:"lh"}); });
+  return o;
+}
+function originOf(b,O){
+  const px=Number(b&&b.px); if(!Number.isFinite(px)) return null;
+  const sh=shiftNow(), lim=Math.max(sh,1.5)+0.1, kOk=y=>!b.k || !y.k || y.k===b.k, km=y=>b.k&&y.k===b.k?1:0;
+  const ex=O.filter(y=>Math.abs(y.line-px)<0.005 && kOk(y)).sort((a,c)=>km(c)-km(a));
+  if(ex.length) return Object.assign({}, ex[0], {how:"exact"});
+  const near=O.filter(y=>{ const d=Math.abs(px-y.line); return d>0.004 && d<=lim+1e-9 && kOk(y); })
+    .sort((a,c)=>km(c)-km(a) || Math.abs(Math.abs(px-a.line)-sh)-Math.abs(Math.abs(px-c.line)-sh));
+  if(!near.length) return null;
+  const y=near[0], d=Math.abs(px-y.line);
+  // the autopilot moves a line TOWARD the price: bot above the scanner line = the line was below the price when armed
+  return Object.assign({}, y, {how: sh>0 && Math.abs(d-sh)<=0.011 ? "shift" : "near", side: y.side || (px>y.line?"below":"above")});
 }
 // One status per card: notbot | armed | paused | touched | ended.
 function classify(c){
@@ -996,21 +1041,42 @@ function chipRow(label, opts, cur, on){   // opts [[value, text, disabled?]]
 function cmdLine(pairs){ const d=el("div","cmdl"); pairs.forEach(([k,c],i)=>{ if(i) d.append(" · "); d.append(k+": ", el("code",null,c)); }); return d; }
 function gotoBox(id){ showTab("trades"); setTimeout(()=>{ const e=$("box-"+id); if(!e){ toast("البوكس مش بالقائمة هلأ"); return; } e.scrollIntoView({block:"center"}); e.classList.add("flash"); setTimeout(()=>e.classList.remove("flash"),1800); },60); }
 
-function addForm(c){
-  const sh=shiftNow(), ap=apS(), f=LN.form[c.key]||(LN.form[c.key]={px:sh>0&&c.side?"shift":"exact", lot:String(Number(ap.lot)||0.01), mode:ap.mode==="rejection"?"rej":"full", entry:ap.entry==="touch"?"touch":"close"});
-  const w=el("div","lnform"), re=()=>renderLines(), spx=shiftedPx(c.line,c.side);
-  const pxOpts=[["exact",`على الخط ${p2(c.line)}`]]; if(sh>0 && c.side) pxOpts.unshift(["shift",`مقرّب ${p2(spx)} (⁦${spx>c.line?"+":"−"}${sh}⁩)`]);
+// v4.3 (owner 11-20): one arm form for a scanner card, a bot-only card (line that left the bot) and a history row.
+// NEVER a double shift: "مقرّب" always starts from the SCANNER line (a bot price from an auto line is already shifted).
+// Only when no scanner line is found does it start from the bot price, and the chip says so.
+function addForm(c, reIn){
+  const sh=shiftNow(), ap=apS(), re=reIn||(()=>renderLines());
+  const bot=c.kind==="bot", sc=bot?c.scan:null, fromBot=bot&&!sc, oldPx=bot&&c.ea?Number(c.ea.px):null;
+  const base=sc?sc.line:c.line, side=sc?sc.side:c.side, spx=shiftedPx(base,side), canShift=sh>0 && Math.abs(spx-base)>0.004;
+  const f=LN.form[c.key]||(LN.form[c.key]={px:canShift&&!fromBot?"shift":"exact", lot:String(Number(ap.lot)||0.01), mode:ap.mode==="rejection"?"rej":"full", entry:ap.entry==="touch"?"touch":"close"});
+  if(f.px==="shift" && !canShift) f.px="exact";
+  const w=el("div","lnform"), sg=spx>base?"+":"−";
+  const pxOpts=[["exact", fromBot?`على سعر البوت ${p2(base)}`:`على الخط ${p2(base)}`]];
+  if(sh>0) pxOpts.unshift(["shift", !canShift ? `مقرّب ${sh}$: السعر الحالي مش معروف`
+    : fromBot ? `مقرّب من سعر البوت ${p2(spx)} (⁦${sg}${sh}⁩)` : `مقرّب ${p2(spx)} (⁦${sg}${sh}⁩)`, !canShift]);
   w.append(chipRow("السعر بالبوت", pxOpts, f.px, v=>{ f.px=v; re(); }));
   w.append(chipRow("اللوت", lotsAllowed(Number(ap.lot)).map(v=>[String(v), v.toFixed(2)]), f.lot, v=>{ f.lot=v; re(); }));
   w.append(chipRow("البوكس", [["full","شمعة كاملة"],["rej","رفض (ذيل)"]], f.mode, v=>{ f.mode=v; re(); }));
   w.append(chipRow("الدخول", [["close","إغلاق برّا"],["touch","لمس الحافة"]], f.entry, v=>{ f.entry=v; re(); }));
-  const px=f.px==="shift"?spx:c.line, ttl=c.endT&&c.endT>Date.now()?Math.max(0.1,(c.endT-Date.now())/3600000).toFixed(1):null;
+  const px=f.px==="shift"&&canShift?spx:base;
   const cmd=`line ${px.toFixed(2)} lot ${f.lot} ${f.mode} ${f.entry} gameoff`;   // owner 11-20: no time limit on a line
   w.append(cmdLine([["الأمر",cmd]]));
+  const kindTxt=[...c.kinds].map(k=>KIND[k]||k).join(" + ")||"رئيسي/احتياطي: مش معروف";
+  const notes=[];
+  if(sc && sc.how!=="exact") notes.push(`خط البوت القديم ${p2(oldPx)} كان مقرّب من خط السكانر ${p2(sc.line)} (${kindTxt}): «مقرّب» بينحسب من خط السكانر، مش من سعر البوت.`);
+  if(sc && sc.how==="near") notes.push(`⚠️ مطابق بالتقريب: الفرق ${Math.abs(oldPx-sc.line).toFixed(2)}$ مش نفس التقريب الحالي ${sh}$، مش أكيد إنه نفس الخط.`);
+  if(fromBot) notes.push("⚠️ ما لقيت خط السكانر الأصلي (مش عاللوح ولا بالسجل). إذا هالخط كان أوتو، سعره مقرّب من قبل: «مقرّب من سعر البوت» بيقرّبه مرة تانية.");
+  const dup=((S&&S.lines)||[]).find(x=>(x.st==="armed"||x.st==="paused") && Math.abs(Number(x.px)-px)<0.011);
+  if(dup) notes.push(`⚠️ في خط بالبوت على ${p2(dup.px)} هلأ (خط ${dup.id}، ${LST[dup.st]||dup.st}): تفعيله كمان مرة بيعمل خط مكرّر.`);
+  notes.forEach(t=>w.append(el("div", /^⚠️/.test(t)?"lc-w":"hint", t)));
   w.append(el("p","hint", "بينحط كخط يدوي: الأوتو ما بيوقفه بالفلتر. "+"بدون وقت انتهاء: الخط بيضل لحد ما ينلمس أو تلغيه."));
-  const go=btn("▶️ فعّل الخط بالبوت",()=>ask({title:"فعّل خط السكانر بالبوت",
-    body:`خط السكانر ${p2(c.line)} (${[...c.kinds].map(k=>KIND[k]).join(" + ")}${c.call?" · "+c.call:""})\nالبوت رح يستنّى على ${p2(px)}\nلوت ${f.lot} · ${MODEN[f.mode]} · ${f.entry==="touch"?"دخول لمس":"إغلاق برّا"}`,
-    warn: S&&S.paused?"البوت موقوف (pause): الخط بيتحط بس ما بيتراقب لحد «كمّل».":"", cmd, run:async()=>{ if(await send(cmd)){ LN.open[c.key]=null; renderLines(); } }}),"primary");
+  const what = fromBot ? `خط البوت القديم ${p2(base)} (ما لقيت خط السكانر)`
+    : `خط السكانر ${p2(base)} (${kindTxt}${c.call?" · "+c.call:""})`+(c.kind==="hist"?" من سجل الخطوط":"")+(sc&&Math.abs(oldPx-base)>0.004?`\nخط البوت القديم ${p2(oldPx)}`:"");
+  const title = c.kind==="hist" ? "فعّل خط من السجل بالبوت" : bot ? "فعّل الخط من جديد بالبوت" : "فعّل خط السكانر بالبوت";
+  const warn=[S&&S.paused?"البوت موقوف (pause): الخط بيتحط بس ما بيتراقب لحد «كمّل».":"", dup?`في خط بالبوت على نفس السعر (خط ${dup.id}).`:""].filter(Boolean).join("\n");
+  const go=btn("▶️ فعّل الخط بالبوت",()=>ask({title,
+    body:`${what}\nالبوت رح يستنّى على ${p2(px)}\nلوت ${f.lot} · ${MODEN[f.mode]} · ${f.entry==="touch"?"دخول لمس":"إغلاق برّا"}`,
+    warn, cmd, run:async()=>{ if(await send(cmd)){ LN.open[c.key]=null; re(); } }}),"primary");
   go.style.width="100%"; w.append(go);
   return w;
 }
@@ -1038,8 +1104,11 @@ function lineCard(c){
   const cl=c.cl, e=c.ea, live=e&&(e.st==="armed"||e.st==="paused"), now=Date.now(), ok=usable();
   const d=el("div","lc s-"+cl.cat);
   const top=el("div","lc-top"), bg=el("div","badges");
-  if(c.kind==="scan") ["M","B"].forEach(k=>{ if(c.kinds.has(k)) bg.append(el("span","badge "+(k==="M"?"main":""), KIND[k])); });
-  else { if(c.k) bg.append(el("span","badge "+(c.k==="M"?"main":""), KIND[c.k])); bg.append(el("span","badge", e.src==="a"?"أوتو":"يدوي")); }
+  // v4.3 (owner 11-20): main / backup on EVERY card (scanner line, or the bridge map k for a bot line); unknown says so
+  const kk=c.kind==="scan" ? ["M","B"].filter(k=>c.kinds.has(k)) : (c.k?[c.k]:[]);
+  kk.forEach(k=>bg.append(el("span","badge "+(k==="M"?"main":""), KIND[k]||k)));
+  if(!kk.length){ const u=el("span","badge dead","رئيسي/احتياطي: مش معروف"); u.title="ما لقيت خط السكانر ولا نوع الخط بالجسر"; bg.append(u); }
+  if(c.kind!=="scan") bg.append(el("span","badge", e.src==="a"?"أوتو":"يدوي"));
   if(c.call) bg.append(el("span","badge "+(c.call==="HOLD"?"hold":"scalp"), c.call));
   if(c.light){ const l=el("span","badge lt"); l.append(el("span","dot sm "+c.light), document.createTextNode(NAMES[c.light]||c.light)); l.title="الضو عند الإعلان"; bg.append(l); }
   top.append(el("span","stp lv",cl.pill), bg); d.append(top);
@@ -1050,7 +1119,13 @@ function lineCard(c){
     const verb=e&&e.st==="gone"?"كان بالبوت على":cl.verb;
     if(e && Math.abs(e.px-c.line)>0.005){ const df=e.px-c.line; pr.append(el("span","arr"," ← "+verb+" "), numEl("px2",p2(e.px)), numEl("mut"," ("+(df>0?"+":"−")+Math.abs(df).toFixed(2)+")")); }
     else if(e) pr.append(el("span","arr"," · "+verb+" نفس السعر"));
-  } else pr.append(el("span","mut","خط البوت "), numEl("px",p2(e.px)));
+  } else {
+    pr.append(el("span","mut","خط البوت "), numEl("px",p2(e.px)));
+    const sc=c.scan;   // v4.3: the scanner line it came from (board / line history)
+    if(sc && Math.abs(e.px-sc.line)>0.004){ const df=e.px-sc.line; pr.append(el("span","arr"," ← من خط السكانر "), numEl("px2",p2(sc.line)), numEl("mut"," ("+(df>0?"+":"−")+Math.abs(df).toFixed(2)+")")); }
+    else if(sc) pr.append(el("span","arr"," · نفس خط السكانر"));
+    else pr.append(el("span","mut"," · ما لقيت خط السكانر"));
+  }
   d.append(pr);
   // side + live distance (hidden when the data is not live)
   if(cl.cat!=="ended"){
@@ -1161,12 +1236,22 @@ function renderLineLog(){
   const box=$("lineLog"); $("logTz").textContent="الأحدث فوق · "+tzLabel();
   if(!S||!S.lh) return; box.textContent="";
   if(!S.lh.length){ box.append(el("p","empty","ما في خطوط لسا.")); return; }
-  S.lh.forEach(([d,px,k,a,res,why])=>{
-    const r=el("div","cmp"), mid=el("div","grow");
+  S.lh.forEach(row=>{
+    const [d,px,k,a,res,why]=row, key="h|"+d+"|"+p2(px)+"|"+k, open=LN.open[key]==="add";
+    const wrap=el("div","lhrow"), r=el("div","cmp"), mid=el("div","grow");
     const arm=a==="a"?"انسلّح أوتو":a==="o"?"انسلّح بإيدك":"ما انسلّح";
-    mid.append(numEl("px",p2(px)), el("div","sub",[mdhmSrv(d), k==="M"?"رئيسي":"احتياطي", arm, why?(WHY[why]||why):""].filter(Boolean).join(" · ")));
-    r.append(el("div","dot sm "+(a==="-"?"none":"green")), mid, el("span","v "+sgn(res), res==null?"–":money(res))); box.append(r);
+    mid.append(numEl("px",p2(px)), el("div","sub",[mdhmSrv(d), KIND[k]||"رئيسي/احتياطي: مش معروف", arm, whyAr(why)].filter(Boolean).join(" · ")));
+    // v4.3 (owner 11-20): ANY history line can be armed again: the same form as the lines tab, from the scanner price
+    const b=btn(open?"✕ سكّر":"▶️ فعّل",()=>{ LN.open[key]=open?null:"add"; renderLineLog(); }, open?"":"primary");
+    b.disabled=!Number.isFinite(Number(px));
+    r.append(el("div","dot sm "+(a==="-"?"none":"green")), mid, el("span","v "+sgn(res), res==null?"–":money(res)), b);
+    wrap.append(r); if(open) wrap.append(addForm(histCard(row,key), ()=>renderLineLog())); box.append(wrap);
   });
+}
+// A history row as a scanner card for addForm: the row's price is the SCANNER line (lh = history_update price), k = M/B.
+function histCard(row,key){
+  const px=Number(row[1]), k=row[2]||"", bl=boardLines().find(x=>Math.abs(x.line-px)<0.005 && (!k||x.k===k));
+  return {kind:"hist", key, line:px, side:bl?bl.side:"", kinds:new Set(k?[k]:[]), k, call:bl?bl.call:null, decl:[], bots:[], endT:null};
 }
 
 /* ================= 4. trades ================= */
