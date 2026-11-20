@@ -9,7 +9,8 @@
 <meta name="theme-color" content="#0b0d0c">
 <title>BOX Commander</title>
 <style>
-/* v3 (2026-11-20): freshness banner first · 5 tabs (status, market, lines, trades, settings) · last-command area.
+/* v4 (2026-11-20): the lines tab is one card per real scanner line with the bot state merged in (status pill, age, actions per state).
+   v3 (2026-11-20): freshness banner first · 5 tabs (status, market, lines, trades, settings) · last-command area.
    Same transport and command syntax as index.html. No secrets in this file: topics and PIN live in the phone's localStorage. */
 :root{
   --bg:#0b0d0c; --card:#141816; --card2:#1a1f1c; --fg:#eef1ec; --muted:#8b948d; --line:#262c28;
@@ -189,6 +190,67 @@ ul.why li{margin:3px 0}
 .cmp .v{font:700 13px var(--mono);direction:ltr;white-space:nowrap}
 .meta{font-size:12px;color:var(--muted);margin-top:6px}
 
+/* ---------- lines v4: one card per scanner line, bot state merged ---------- */
+.sumbar{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.sumbar button{min-height:54px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:11.5px;color:var(--muted);border-top-width:3px}
+.sumbar button b{font:800 20px var(--mono);color:var(--fg)}
+.sumbar .s-armed{border-top-color:var(--ok)}.sumbar .s-paused{border-top-color:var(--warn)}.sumbar .s-notbot{border-top-color:var(--muted);border-top-style:dashed}
+.sumbar .s-touched{border-top-color:var(--info)}.sumbar .s-ended{border-top-color:var(--line)}
+.lnnote{font-size:12px;margin:8px 0 0;padding:7px 10px;border-radius:10px;border:1px solid var(--warn);color:var(--warn);white-space:pre-line}
+body[data-fresh="stale"] .lnnote{border-color:var(--bad);color:var(--bad);font-weight:700}
+#lnKind button{flex:1 1 0}
+details.legend{margin-top:10px;border-top:1px solid var(--line);padding-top:6px}
+details.legend>summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--muted);min-height:40px;display:flex;align-items:center;list-style:none}
+details.legend>summary::-webkit-details-marker{display:none}
+details.legend>summary::before{content:"ⓘ";margin-inline-end:6px}
+.lg{display:flex;gap:8px;align-items:baseline;font-size:12.5px;padding:4px 0}
+.lg .stp{flex:0 0 auto}
+.lgn{font-size:12px;color:var(--muted);margin:6px 0 0}
+.gmain>h2{color:var(--gold)}
+.lc{border:1px solid var(--line);border-radius:14px;padding:11px 12px;background:var(--card2);border-inline-start:5px solid var(--muted);display:flex;flex-direction:column;gap:5px}
+.lc.s-armed{border-inline-start-color:var(--ok)}
+.lc.s-paused{border-inline-start-color:var(--warn)}
+.lc.s-notbot{border-inline-start-style:dashed;border-inline-start-color:var(--muted)}
+.lc.s-touched{border-inline-start-color:var(--info)}
+.lc.s-ended{opacity:.62;background:transparent;border-style:dashed}
+.lc-top{display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap}
+.stp{display:inline-block;font-size:13px;font-weight:800;padding:4px 11px;border-radius:99px;white-space:nowrap;border:1.5px solid transparent}
+.s-armed .stp,.stp.s-armed{background:var(--ok);color:var(--bg)}
+.s-paused .stp,.stp.s-paused{background:var(--warn);color:var(--bg)}
+.s-notbot .stp,.stp.s-notbot{border:1.5px dashed var(--muted);color:var(--fg)}
+.s-touched .stp,.stp.s-touched{background:var(--info);color:var(--bg)}
+.s-ended .stp,.stp.s-ended{border-color:var(--line);color:var(--muted)}
+body[data-fresh="stale"] .stp{background:transparent!important;border:1.5px solid var(--muted)!important}
+.badge.lt{display:inline-flex;align-items:center;gap:4px}
+.lc-px{font-size:13px;line-height:1.6}
+.lc-px .px{font-weight:800;font-size:20px}
+.lc-px .px2{font-family:var(--mono);direction:ltr;unicode-bidi:isolate;font-weight:800;font-size:17px;color:var(--gold)}
+.lc-px .arr{color:var(--muted)}
+.lc-dist{font-size:13px}
+.lc-dist .num{font-weight:800}
+.lc-dist.old{color:var(--muted);font-size:12px}
+.lc-t,.lc-m{font-size:12px;color:var(--muted)}
+.lc-m{color:var(--fg);opacity:.85}
+.lc-why{font-size:12.5px;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:6px 9px}
+.s-paused .lc-why{border-color:color-mix(in srgb,var(--warn) 55%,transparent)}
+.lc-w{font-size:12px;color:var(--warn);font-weight:700}
+.lc-box{font-size:13px;font-weight:700}
+.lc .acts{margin-top:4px}
+.lc .acts button{min-height:46px;font-size:14px}
+.cmdl{font-size:11.5px;color:var(--muted);overflow-wrap:anywhere}
+.cmdl code{font:11.5px var(--mono);direction:ltr;unicode-bidi:isolate;background:var(--card);border:1px solid var(--line);padding:1px 5px;border-radius:5px;color:var(--fg)}
+.lnform{border-top:1px dashed var(--line);margin-top:4px;padding-top:8px;display:flex;flex-direction:column;gap:8px}
+.lnform .fh{font-size:13px;font-weight:800}
+.lnform .fld label{margin-bottom:3px}
+.lnform .chips button{min-height:44px}
+details.endgrp{margin-top:10px}
+details.endgrp>summary{cursor:pointer;list-style:none;font-size:13px;font-weight:800;color:var(--muted);min-height:44px;display:flex;align-items:center;border-top:1px solid var(--line)}
+details.endgrp>summary::-webkit-details-marker{display:none}
+details.endgrp>summary::after{content:"‹";margin-inline-start:8px;transform:rotate(-90deg);transition:transform .15s}
+details.endgrp[open]>summary::after{transform:rotate(90deg)}
+details.endgrp .lt{margin-top:4px}
+.bx.flash{outline:3px solid var(--gold);outline-offset:2px}
+
 /* ---------- trades ---------- */
 .totals{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;text-align:center}
 .totals div{border:1px solid var(--line);border-radius:10px;padding:6px 2px;font-size:11px;color:var(--muted);background:var(--card2);min-width:0}
@@ -344,18 +406,38 @@ nav.tabs .cnt.bad{background:var(--bad);color:#fff}
     </section>
   </div>
 
-  <!-- ================= 3. LINES ================= -->
+  <!-- ================= 3. LINES (v4: one card per scanner line, bot state merged in) ================= -->
   <div class="view" data-view="lines" hidden>
     <section class="card">
-      <h2>لوح السكانر <small id="boardTz"></small><span class="oldtag">قديم</span></h2>
-      <div id="board"><p class="empty">بستنّى لوح السكانر…</p></div>
-      <p class="hint">"فعّل" بيبعت الخط بإعدادات "خط يدوي" تحت. الأوتوبايلوت بيقرّب الخط بمقدار التقريب باتجاه السعر.</p>
+      <h2>الخطوط <small id="lnTz"></small><span class="oldtag">قديم</span></h2>
+      <div class="sumbar" id="lnSum"></div>
+      <p class="lnnote" id="lnNote" hidden></p>
+      <div class="chips" id="lnFilter" style="margin-top:10px">
+        <button data-v="all" aria-pressed="true">الكل</button><button data-v="armed">المسلّح</button><button data-v="inactive">مش مفعّل</button><button data-v="touched">انلمس</button><button data-v="ended">خلص</button>
+      </div>
+      <div class="chips" id="lnKind" style="margin-top:6px">
+        <button data-v="M">⭐ رئيسي</button><button data-v="B">احتياطي</button><button data-v="all" aria-pressed="true">الكل</button>
+      </div>
+      <details class="legend">
+        <summary>شو يعني كل لون؟</summary>
+        <div class="lg"><span class="stp s-notbot">○ مش بالبوت</span><span>خط سكانر والبوت مش عليه. «فعّل بالبوت» بيحطه (بتختار اللوت).</span></div>
+        <div class="lg"><span class="stp s-armed">✓ مسلّح</span><span>البوت مستني السعر يلمسه، وبيعمل بوكس. فيك توقّفه أو تلغيه أو تغيّر لوته.</span></div>
+        <div class="lg"><span class="stp s-paused">⏸ موقوف</span><span>الخط بالبوت بس ما بيتراقب. السبب مكتوب: الفلتر (الأوتو بيرجّعه لحاله)، بإيدك، أو البوت كله واقف.</span></div>
+        <div class="lg"><span class="stp s-touched">👆 انلمس</span><span>السعر لمسه وانعمل بوكس لسا شغّال. الزر بياخدك عليه بالصفقات.</span></div>
+        <div class="lg"><span class="stp s-ended">⌛ خلص</span><span>انلمس والبوكس تسكّر، انلغى، أو خلص وقته. مسكّرين تحت كل مجموعة.</span></div>
+        <p class="lgn">«الخط ← مسلّح على»: الأوتو بيقرّب الخط بمقدار التقريب باتجاه السعر، فالبوت بيستنّى على سعر مختلف شوي عن السكانر.</p>
+        <p class="lgn">«مسلّح من»: من أول حالة شافها التلفون الخط فيها هيك (الجسر ما بيبعت وقت التسليح ولا وقت الانتهاء). «أو أكتر» = كان هيك قبل أول حالة عند التلفون.</p>
+        <p class="lgn">لخط موجود البوت بيغيّر: اللوت، شكل البوكس، الدخول (lineset). ما بيغيّر السعر ولا وقت الانتهاء: الغي الخط وفعّله من جديد.</p>
+        <p class="lgn">الترتيب: الأقرب للسعر أول، جوّا كل مجموعة.</p>
+      </details>
     </section>
 
+    <div id="lnList" style="display:flex;flex-direction:column;gap:12px"></div>
+
     <section class="card">
-      <h2>خطوط البوت <small id="activeCount"></small><span class="oldtag">قديم</span></h2>
-      <div id="eaLines"><p class="empty">بستنّى حالة البوت…</p></div>
-      <button class="danger" id="clearLines" style="width:100%;margin-top:12px">〰️ امسح كل الخطوط (line off)</button>
+      <h2>كل خطوط البوت</h2>
+      <button class="danger" id="clearLines" style="width:100%">〰️ امسح كل الخطوط (line off)</button>
+      <p class="hint">بيلغي كل خطوط البوت المستنية. البوكسات والصفقات المفتوحة ما بتنلمس.</p>
     </section>
 
     <details class="sec">
@@ -781,8 +863,10 @@ function renderMarket(){
   $("gateCfg").textContent = ap ? `الإعداد: البوابة ${ap.gate==="both"?"ضو + ساعة":"ضو بس"} · الأضواء ${(ap.lights||[]).map(x=>NAMES[x]||x).join("، ")} · ${g.notes.join(" · ")} · تقريب ${ap.shift??0}$` : "الجسر ما بعت إعدادات الأوتوبايلوت.";
 }
 
-/* ================= 3. lines ================= */
-// The bridge carries the v2 board inside STATE (b2): use it when the v2 stream is missing or older.
+/* ================= 3. lines (v4: one card per real scanner line, the bot line merged in) ================= */
+// Sources, all read only: lastV2.lines (scanner board, from b2 inside STATE or the v2 stream), S.lines (bot lines:
+// armed + paused + the last 6 used; cancelled / expired lines LEAVE STATE), S.boxes, S.lh (line history), S.ap.
+// The bridge does not send a line's arm time or expiry: LT remembers what this phone saw in the STATE stream.
 function boardFromState(b){
   if(!b || !b.ts || (lastV2 && (lastV2.ts_utc||"") >= b.ts)) return;
   const light={}; Object.keys(b.lt||{}).forEach(h=>light[h]={colour:b.lt[h]});
@@ -790,109 +874,288 @@ function boardFromState(b){
     lines:(b.lines||[]).map(x=>({line:x.l, k:x.k, status:{w:"waiting",t:"touched",e:"ended"}[x.s]||x.s, call:x.c, light:x.lt,
       side:x.sd==="a"?"above":x.sd==="b"?"below":"", declared_utc:x.d?"0000-00-00T"+x.d:"", tp_usd:x.tp, near_target:x.nt}))};
 }
-// An auto line sits ap.shift $ from the scanner line (toward the price): match exact or shifted.
-function eaFor(line){
-  if(!S) return null; const sh=Number(S.ap&&S.ap.shift)||0;
-  return (S.lines||[]).find(x=>x.st!=="cancelled" && (Math.abs(x.px-line)<0.005 || (sh>0 && Math.abs(Math.abs(x.px-line)-sh)<0.011)));
+const LT={};                  // bot line id -> {st, stT, stExact, firstT, firstExact, gone, goneFrom, px, k, src, lot, m, t, box}
+let prevStateT=0;
+function trackLines(s,t){
+  const ids=new Set();
+  (s.lines||[]).forEach(x=>{
+    ids.add(x.id);
+    let r=LT[x.id];
+    if(!r) r=LT[x.id]={id:x.id, st:null, firstT:t, firstExact:prevStateT>0};
+    if(r.st!==x.st){ r.stExact = r.st!==null || prevStateT>0; r.stT=t; r.st=x.st; }   // the change happened between the last two STATEs
+    Object.assign(r,{px:x.px, k:x.k, src:x.src, lot:x.lot, m:x.m, t:x.t, box:x.box, c:x.c, gone:null});
+  });
+  Object.values(LT).forEach(r=>{ if(!ids.has(r.id) && !r.gone && (r.st==="armed"||r.st==="paused")){ r.gone=t; r.goneFrom=r.st; } });
+  prevStateT=t;
 }
-function boardAt(px){ if(!lastV2) return null; const sh=Number(S&&S.ap&&S.ap.shift)||0;
-  return (lastV2.lines||[]).find(x=>Math.abs(x.line-px)<0.005 || (sh>0&&Math.abs(Math.abs(x.line-px)-sh)<0.011)); }
 function lhAt(px){ return S&&S.lh ? S.lh.find(r=>Math.abs(r[1]-px)<0.005) : null; }
-function distText(px){
-  if(!S||!S.bid) return "";
-  if(!usable()) return "المسافة مش معروفة (السعر قديم)";
-  const d=px-S.bid; return (d>0?"▲ فوق السعر بـ ":"▼ تحت السعر بـ ")+Math.abs(d).toFixed(2)+"$";
+function boardLines(){
+  if(!lastV2) return [];
+  const ts=Date.parse(lastV2.ts_utc||"")||Date.now();
+  return (lastV2.lines||[]).filter(x=>x && Number.isFinite(Number(x.line))).map(x=>{
+    const d=String(x.declared_utc||""), hm=/T(\d\d):(\d\d)/.exec(d); let decT=null;
+    if(d && !d.startsWith("0000")){ const p=Date.parse(d); decT=Number.isFinite(p)?p:null; }
+    else if(hm){ const b=new Date(ts); let t=Date.UTC(b.getUTCFullYear(),b.getUTCMonth(),b.getUTCDate(),+hm[1],+hm[2]); if(t>ts+60000) t-=86400000; decT=t; }  // b2 sends HH:MM only
+    const e=x.end_utc?Date.parse(x.end_utc):NaN;
+    return {id:x.id||"", line:Number(x.line), k:x.k||"M", status:x.status, call:x.call||null, light:x.light||null, side:x.side||"",
+      decT, endT:Number.isFinite(e)?e:null, tp:x.tp_usd, nt:x.near_target};
+  });
 }
-function lineBadges(x){
-  const w=el("div","badges");
-  if(x.k) w.append(el("span","badge "+(x.k==="M"?"main":""), KIND[x.k]||x.k));
-  w.append(el("span","badge", x.src==="a"?"أوتو":"يدوي"));
-  if(x.c) w.append(el("span","badge "+(x.c==="HOLD"?"hold":"scalp"), x.c));
+const apS=()=>(S&&S.ap)||{};
+const shiftNow=()=>Number(apS().shift)||0;
+function shiftedPx(line,side){ const sh=shiftNow(); return Math.round((sh>0&&side==="below"?line+sh:sh>0&&side==="above"?line-sh:line)*100)/100; }
+// The bridge's ap_allows() as reasons: [] = the autopilot filter lets this line in now.
+function filterWhy(call){
+  const R=[]; if(!S) return R; const ap=apS(), L=ap.lights||[], l6=S.l6||"none";
+  if(ap.which && ap.which!=="all" && String(call||"").toLowerCase()!==ap.which) R.push(`الأوتو بياخد ${ap.which.toUpperCase()} بس${call?"، وهاد "+call:""}`);
+  if(!(L.length===4 || L.includes(l6))) R.push(`ضو 6 س ${NAMES[l6]||l6}، ومش من الأضواء اللي اخترتها`);
+  if(ap.gate==="both"){ const xp=S.xp; if(!xp) R.push("البوابة ضو + ساعة، والساعة مش شغّالة"); else if(xp.st) R.push("البوابة ضو + ساعة، والساعة قديمة"); else if(!xp.b) R.push("البوابة ضو + ساعة، والساعة مش قوية"); }
+  return R;
+}
+function buildCards(){
+  const scan=[], by={};
+  boardLines().forEach(x=>{
+    const key=x.line.toFixed(2)+"|"+x.side;
+    let c=by[key]; if(!c){ c=by[key]={kind:"scan", key, line:x.line, side:x.side, decl:[], kinds:new Set(), bots:[]}; scan.push(c); }
+    c.decl.push(x); c.kinds.add(x.k);
+  });
+  const rank={waiting:0,touched:1,ended:2};
+  scan.forEach(c=>{
+    c.decl.sort((a,b)=>(rank[a.status]??3)-(rank[b.status]??3) || (b.decT||0)-(a.decT||0));
+    const d=c.decl[0]; Object.assign(c,{status:d.status, call:d.call, light:d.light, decT:d.decT, tp:d.tp, nt:d.nt, k:c.kinds.has("M")?"M":"B"});
+    const ends=c.decl.filter(x=>x.status===d.status && x.endT).map(x=>x.endT); c.endT=ends.length?Math.max(...ends):null;
+  });
+  const live=S?(S.lines||[]):[];
+  const gone=Object.values(LT).filter(r=>r.gone && !live.some(b=>b.id===r.id))
+    .map(r=>({id:r.id, px:r.px, st:"gone", k:r.k, src:r.src, lot:r.lot, m:r.m, t:r.t, box:r.box, c:r.c, goneT:r.gone, goneFrom:r.goneFrom}));
+  const pool=live.concat(gone), claimed=new Set(), sh=shiftNow();
+  const pass=(how,fit,one)=>scan.forEach(c=>{
+    if(one && c.bots.length) return;
+    let m=pool.filter(b=>!claimed.has(b.id) && fit(c,b));
+    if(one) m=m.filter(b=>b.st==="armed"||b.st==="paused").sort((a,b)=>Math.abs(a.px-c.line)-Math.abs(b.px-c.line)).slice(0,1);
+    m.forEach(b=>{ claimed.add(b.id); c.bots.push(Object.assign({how},b)); });
+  });
+  pass("exact",(c,b)=>Math.abs(b.px-c.line)<0.005);
+  if(sh>0) pass("shift",(c,b)=>c.side ? Math.abs(b.px-shiftedPx(c.line,c.side))<0.011 : Math.abs(Math.abs(b.px-c.line)-sh)<0.011);
+  // An auto line armed with an older shift: nearest live auto line up to $5 toward the price, flagged as a guess.
+  pass("guess",(c,b)=>{ if(b.src!=="a" || (b.k && !c.kinds.has(b.k))) return false; const d=c.side==="below"?b.px-c.line:c.side==="above"?c.line-b.px:-1; return d>0.004 && d<=5.01; }, true);
+  const lr=b=>b.st==="armed"||b.st==="paused"?0:b.st==="used"?1:2;
+  scan.forEach(c=>{ c.bots.sort((a,b)=>lr(a)-lr(b) || b.id-a.id); c.ea=c.bots[0]||null; c.prev=c.bots.slice(1); });
+  const manual=pool.filter(b=>!claimed.has(b.id)).map(b=>({kind:"bot", key:"b"+b.id, line:b.px, side:"", kinds:new Set(b.k?[b.k]:[]), k:b.k||"",
+    call:b.c||null, light:null, decT:null, endT:null, ea:Object.assign({how:"self"},b), prev:[]}));
+  return {scan, manual};
+}
+// One status per card: notbot | armed | paused | touched | ended.
+function classify(c){
+  const e=c.ea, st=(S&&S.settings)||{};
+  if(e && e.st==="armed"){
+    if(S.paused) return {cat:"paused", pill:"⏸ موقوف · البوت واقف", verb:"مسلّح على", why:["الخط نفسه مسلّح، بس البوت كله موقوف (pause): ما بيتراقب لحد ما تكبس «كمّل» من تبويب الحالة."]};
+    return {cat:"armed", pill:"✓ مسلّح · مستني لمس", verb:"مسلّح على", why:[]};
+  }
+  if(e && e.st==="paused"){
+    if(e.f){ const f=filterWhy(c.call||e.c);
+      return {cat:"paused", pill:"⏸ موقوف · الفلتر", verb:"موقوف على", why:[f.length ? "الأوتو وقّفه: "+f.join("، ")+". بيرجّعه لحاله لما يسمح." : "الأوتو وقّفه بالفلتر. هلأ الفلتر بيسمح: الأوتو بيرجّعه خلال دقيقة تقريباً."]}; }
+    return {cat:"paused", pill:"⏸ موقوف · بإيدك", verb:"موقوف على", why:["انوقف بإيدك، أو بـ «وقف كامل» / حد الخسارة. الأوتو ما بيرجّعه: «فعّل» بيرجّعه."]};
+  }
+  if(e && e.st==="used"){
+    const ob=S&&(S.boxes||[]).find(b=>b.id===e.box);
+    if(ob) return {cat:"touched", pill:"👆 انلمس · البوكس شغّال", verb:"انلمس على", why:[], box:ob};
+    const h=lhAt(c.line);
+    return {cat:"ended", pill:"⌛ خلص · انلمس والبوكس تسكّر", verb:"انلمس على", why:[e.box?`بوكس ${e.box} تسكّر`+(h&&h[4]!=null?` · النتيجة ${money(h[4])}`:""):"انلمس"]};
+  }
+  const goneWhy = e && e.st==="gone" ? `كان بالبوت (خط ${e.id}، ${e.goneFrom==="paused"?"موقوف":"مسلّح"}) وطلع قبل ${ago(Date.now()-e.goneT)}: انلغى أو خلص وقته.`+(e.src==="a"?" الأوتو ما بيرجع يسلّحه.":"") : "";
+  if(c.kind==="bot") return {cat:"ended", pill:"⌛ خلص · طلع من البوت", verb:"كان على", why:[goneWhy]};
+  if(c.status==="ended") return {cat:"ended", pill:"⌛ خلص · وقته خلص عالسكانر", verb:"كان على", why:goneWhy?[goneWhy]:[]};
+  if(c.status==="touched") return {cat:"ended", pill:"⌛ خلص · انلمس بدون بوت", verb:"كان على", why:[goneWhy||"السعر لمس خط السكانر والبوت ما كان عليه."]};
+  // waiting on the scanner, not in the bot: why the autopilot did not take it
+  const R=[];
+  if(goneWhy) R.push(goneWhy);
+  else{
+    const h=lhAt(c.line);
+    if(h && /^EA refused/.test(h[5]||"")) R.push("البوت رفضه: "+String(h[5]).slice(12));
+    if(!st.auto_line) R.push("الأوتوبايلوت مطفي: ما بيسلّح ولا خط.");
+    else if(!c.kinds.has("M") && apS().kinds!=="all") R.push("الأوتو بياخد الرئيسي بس (الإعدادات: أي خطوط).");
+    else{ const f=filterWhy(c.call); if(f.length) R.push("الفلتر ما بيسمح: "+f.join("، ")+".");
+      else{ const ba=boardAge(); R.push(ba!=null&&ba>900 ? "لوح السكانر قديم: الأوتو ما بيسلّح." : "الأوتو لسا ما سلّحه، أو سلّحه قبل وانلغى (بيسلّح كل خط مرة وحدة بس)."); } }
+  }
+  return {cat:"notbot", pill:"○ مش بالبوت", verb:"", why:R};
+}
+
+const LN={filter:"all", kind:"all", open:{}, form:{}, set:{}, pend:{}, endOpen:{}};
+try{ const s=JSON.parse(localStorage.getItem("boxlines4")||"null"); if(s){ if(s.filter) LN.filter=s.filter; if(s.kind) LN.kind=s.kind; } }catch(e){}
+function lnSave(){ try{ localStorage.setItem("boxlines4", JSON.stringify({filter:LN.filter, kind:LN.kind})); }catch(e){} }
+const LOTS=[0.01,0.02,0.03,0.05,0.1];
+function lotsAllowed(extra){ const cap=Number(S&&S.lot_cap)||0.03, v=LOTS.filter(x=>x<=cap+1e-9); if(extra>0 && extra<=cap+1e-9 && !v.includes(extra)) v.push(extra); return v.sort((a,b)=>a-b); }
+const STNOW={armed:"مسلّح", paused:"موقوف", used:"انلمس"};
+const MODEN={f:"شمعة كاملة", r:"رفض (ذيل)", full:"شمعة كاملة", rej:"رفض (ذيل)"};
+function chipRow(label, opts, cur, on){   // opts [[value, text, disabled?]]
+  const w=el("div","fld"); w.append(el("label",null,label)); const r=el("div","chips");
+  opts.forEach(([v,t,dis])=>{ const b=el("button",null,t); b.type="button"; b.setAttribute("aria-pressed", String(v)===String(cur)?"true":"false"); b.disabled=!!dis; b.onclick=()=>on(v); r.append(b); });
+  w.append(r); return w;
+}
+function cmdLine(pairs){ const d=el("div","cmdl"); pairs.forEach(([k,c],i)=>{ if(i) d.append(" · "); d.append(k+": ", el("code",null,c)); }); return d; }
+function gotoBox(id){ showTab("trades"); setTimeout(()=>{ const e=$("box-"+id); if(!e){ toast("البوكس مش بالقائمة هلأ"); return; } e.scrollIntoView({block:"center"}); e.classList.add("flash"); setTimeout(()=>e.classList.remove("flash"),1800); },60); }
+
+function addForm(c){
+  const sh=shiftNow(), ap=apS(), f=LN.form[c.key]||(LN.form[c.key]={px:sh>0&&c.side?"shift":"exact", lot:String(Number(ap.lot)||0.01), mode:ap.mode==="rejection"?"rej":"full", entry:ap.entry==="touch"?"touch":"close"});
+  const w=el("div","lnform"), re=()=>renderLines(), spx=shiftedPx(c.line,c.side);
+  const pxOpts=[["exact",`على الخط ${p2(c.line)}`]]; if(sh>0 && c.side) pxOpts.unshift(["shift",`مقرّب ${p2(spx)} (⁦${spx>c.line?"+":"−"}${sh}⁩)`]);
+  w.append(chipRow("السعر بالبوت", pxOpts, f.px, v=>{ f.px=v; re(); }));
+  w.append(chipRow("اللوت", lotsAllowed(Number(ap.lot)).map(v=>[String(v), v.toFixed(2)]), f.lot, v=>{ f.lot=v; re(); }));
+  w.append(chipRow("البوكس", [["full","شمعة كاملة"],["rej","رفض (ذيل)"]], f.mode, v=>{ f.mode=v; re(); }));
+  w.append(chipRow("الدخول", [["close","إغلاق برّا"],["touch","لمس الحافة"]], f.entry, v=>{ f.entry=v; re(); }));
+  const px=f.px==="shift"?spx:c.line, ttl=c.endT&&c.endT>Date.now()?Math.max(0.1,(c.endT-Date.now())/3600000).toFixed(1):null;
+  const cmd=`line ${px.toFixed(2)} lot ${f.lot} ${f.mode} ${f.entry} gameoff`+(ttl?` ttl ${ttl}`:"");
+  w.append(cmdLine([["الأمر",cmd]]));
+  w.append(el("p","hint", "بينحط كخط يدوي: الأوتو ما بيوقفه بالفلتر. "+(ttl?`بينتهي مع خط السكانر (بعد ${ttl} س).`:"وقت انتهاء خط السكانر مش معروف: الخط بيضل لحد ما ينلمس أو تلغيه.")));
+  const go=btn("▶️ فعّل الخط بالبوت",()=>ask({title:"فعّل خط السكانر بالبوت",
+    body:`خط السكانر ${p2(c.line)} (${[...c.kinds].map(k=>KIND[k]).join(" + ")}${c.call?" · "+c.call:""})\nالبوت رح يستنّى على ${p2(px)}\nلوت ${f.lot} · ${MODEN[f.mode]} · ${f.entry==="touch"?"دخول لمس":"إغلاق برّا"}`,
+    warn: S&&S.paused?"البوت موقوف (pause): الخط بيتحط بس ما بيتراقب لحد «كمّل».":"", cmd, run:async()=>{ if(await send(cmd)){ LN.open[c.key]=null; renderLines(); } }}),"primary");
+  go.style.width="100%"; w.append(go);
   return w;
 }
-function lineCmd(px){ return `line ${px} lot ${form.lot} ${form.mode} ${form.entry} gameoff`; }
-function boardRow(x){
-  const r=el("div","cmp"), ea=eaFor(x.line), gone=ea&&(ea.st==="used"||ea.st==="expired");
-  if(gone||x.status==="ended") r.classList.add("dim");
-  const mid=el("div","grow");
-  mid.append(numEl("px",p2(x.line)), el("div","sub",[x.side==="above"?"فوق السعر":x.side==="below"?"تحت السعر":"",
-    hmSrv((x.declared_utc||"").slice(11,16)), x.near_target?"هدف قريب "+x.near_target:"", x.tp_usd?"هدف مقترح "+x.tp_usd+"$":""].filter(Boolean).join(" · ")));
-  r.append(el("div","dot sm "+(x.light||"none")), mid);
-  if(x.call) r.append(el("span","badge "+(x.call==="HOLD"?"hold":"scalp"), x.call));
-  if(ea) r.append(el("span","badge "+(ea.st==="used"?"used":ea.st==="armed"?"on":ea.st==="paused"?"paused":"dead"),
-    (ea.st==="used"&&ea.box?`بوكس ${ea.box}`:(LST[ea.st]||ea.st))+(Math.abs(ea.px-x.line)>0.005?" على "+p2(ea.px):"")));
-  else if(x.status!=="ended") r.append(btn("فعّل",()=>ask({title:"فعّل خط السكانر",body:`خط ${p2(x.line)} بإعدادات "خط يدوي": ${form.mode==="full"?"شمعة كاملة":"رفض"} · ${form.entry==="touch"?"لمس":"إغلاق برّا"} · لوت ${form.lot}`,cmd:lineCmd(x.line)})));
-  return r;
+function linesetCmd(e,s){
+  const parts=[]; if(Number(s.lot)!==Number(e.lot)) parts.push("lot "+s.lot);
+  if(s.m!==e.m) parts.push(s.m==="f"?"full":"rej"); if(Number(s.t)!==Number(e.t)) parts.push(Number(s.t)?"touch":"close");
+  return parts.length ? `lineset ${e.id} ${parts.join(" ")}` : null;
 }
-function renderBoard(){
-  const box=$("board"); box.textContent=""; $("boardTz").textContent=tzLabel();
-  const ls=(lastV2&&lastV2.lines)||[];
-  if(!ls.length){ box.append(el("p","empty", lastV2?"ما في خطوط على اللوح هلأ":"بستنّى لوح السكانر…")); return; }
-  const order={waiting:0,touched:1,ended:2};
-  [["M","⭐ الرئيسي"],["B","الاحتياطي"]].forEach(([k,title])=>{
-    const g=ls.filter(x=>(x.k||"M")===k).sort((a,b)=>(order[a.status]??3)-(order[b.status]??3) || (b.declared_utc||"").localeCompare(a.declared_utc||""));
-    box.append(el("div","grp"+(k==="M"?" main":""), `${title} (${g.length})`));
-    if(!g.length){ box.append(el("p","empty","ما في")); return; }
-    [["waiting","⏳ مستني لمس"],["touched","👆 انلمس"],["ended","⌛ خلص وقته"]].forEach(([s,lbl])=>{
-      const gg=g.filter(x=>x.status===s); if(!gg.length) return;
-      const h=el("div","meta",`${lbl} (${gg.length})`); h.style.fontWeight="700"; box.append(h);
-      gg.forEach(x=>box.append(boardRow(x)));
-    });
-    const other=g.filter(x=>!(x.status in order)); other.forEach(x=>box.append(boardRow(x)));
-  });
+function setForm(c){
+  const e=c.ea, s=LN.set[e.id]||(LN.set[e.id]={lot:String(e.lot), m:e.m, t:Number(e.t)}), w=el("div","lnform"), re=()=>renderLines();
+  w.append(el("div","fh",`إعدادات خط ${e.id} بس (للبوكس اللي رح ينعمل منه)`));
+  w.append(chipRow("اللوت", lotsAllowed(Number(e.lot)).map(v=>[String(v), v.toFixed(2)]), s.lot, v=>{ s.lot=v; re(); }));
+  w.append(chipRow("البوكس", [["f","شمعة كاملة"],["r","رفض (ذيل)"]], s.m, v=>{ s.m=v; re(); }));
+  w.append(chipRow("الدخول", [[0,"إغلاق برّا"],[1,"لمس الحافة"]], s.t, v=>{ s.t=Number(v); re(); }));
+  const cmd=linesetCmd(e,s);
+  if(cmd) w.append(cmdLine([["الأمر",cmd]]));
+  const from=`لوت ${e.lot} · ${MODEN[e.m]} · ${e.t?"لمس":"إغلاق برّا"}`, to=`لوت ${s.lot} · ${MODEN[s.m]} · ${s.t?"لمس":"إغلاق برّا"}`;
+  const go=btn(cmd?"ابعت التغيير":"غيّر شي فوق",()=>ask({title:`إعدادات خط ${e.id}`, body:`من: ${from}\nإلى: ${to}\nبيتطبّق على البوكس اللي رح ينعمل من هالخط بس.`, cmd,
+    run:async()=>{ if(await send(cmd)){ LN.pend[e.id]={lot:s.lot, m:s.m, t:s.t, t0:Date.now()}; LN.open[c.key]=null; delete LN.set[e.id]; renderLines(); } }}),"primary");
+  go.disabled=!cmd; go.style.width="100%"; w.append(go);
+  w.append(el("p","hint","البوت (EA) بيغيّر لخط موجود: اللوت، شكل البوكس، الدخول. ما بيغيّر سعر الخط ولا وقت انتهاءه: لتغييرهم الغي الخط وفعّله من جديد."));
+  return w;
 }
-function groups(){
-  const ls=S?(S.lines||[]):[], bid=S&&S.bid||0;
-  const wait=ls.filter(x=>x.st==="armed"||x.st==="paused").sort((a,b)=>(a.st===b.st?0:a.st==="armed"?-1:1) || Math.abs(a.px-bid)-Math.abs(b.px-bid));
-  const used=ls.filter(x=>x.st==="used").sort((a,b)=>(b.box||0)-(a.box||0));
-  const dead=ls.filter(x=>x.st==="expired"||x.st==="cancelled").map(x=>({px:x.px,k:x.k,src:x.src,c:x.c,why:LST[x.st],id:x.id}));
-  ((S&&S.lh)||[]).forEach(([d,px,k,a,res,why])=>{   // ended lines are not in STATE.lines: read them from the line history
-    if(a==="-" || !/^(expired|owner cancelled)/.test(why||"") || ls.some(x=>Math.abs(x.px-px)<0.005) || dead.some(x=>Math.abs(x.px-px)<0.005)) return;
-    dead.push({px,k,src:a==="a"?"a":"o",c:null,why:WHY[why]||why,d});
-  });
-  return {wait,used,dead};
+function lineCard(c){
+  const cl=c.cl, e=c.ea, live=e&&(e.st==="armed"||e.st==="paused"), now=Date.now(), ok=usable();
+  const d=el("div","lc s-"+cl.cat);
+  const top=el("div","lc-top"), bg=el("div","badges");
+  if(c.kind==="scan") ["M","B"].forEach(k=>{ if(c.kinds.has(k)) bg.append(el("span","badge "+(k==="M"?"main":""), KIND[k])); });
+  else { if(c.k) bg.append(el("span","badge "+(c.k==="M"?"main":""), KIND[c.k])); bg.append(el("span","badge", e.src==="a"?"أوتو":"يدوي")); }
+  if(c.call) bg.append(el("span","badge "+(c.call==="HOLD"?"hold":"scalp"), c.call));
+  if(c.light){ const l=el("span","badge lt"); l.append(el("span","dot sm "+c.light), document.createTextNode(NAMES[c.light]||c.light)); l.title="الضو عند الإعلان"; bg.append(l); }
+  top.append(el("span","stp lv",cl.pill), bg); d.append(top);
+  // price: scanner line -> where the bot waits
+  const pr=el("div","lc-px");
+  if(c.kind==="scan"){
+    pr.append(el("span","mut","الخط "), numEl("px",p2(c.line)));
+    const verb=e&&e.st==="gone"?"كان بالبوت على":cl.verb;
+    if(e && Math.abs(e.px-c.line)>0.005){ const df=e.px-c.line; pr.append(el("span","arr"," ← "+verb+" "), numEl("px2",p2(e.px)), numEl("mut"," ("+(df>0?"+":"−")+Math.abs(df).toFixed(2)+")")); }
+    else if(e) pr.append(el("span","arr"," · "+verb+" نفس السعر"));
+  } else pr.append(el("span","mut","خط البوت "), numEl("px",p2(e.px)));
+  d.append(pr);
+  // side + live distance (hidden when the data is not live)
+  if(cl.cat!=="ended"){
+    const ref=live||e&&e.st==="used"?e.px:c.line, dr=el("div","lc-dist");
+    if(ok && S && S.bid){ const dd=ref-S.bid; dr.append(el("b",null,dd>0?"▲ فوق السعر":"▼ تحت السعر"), " بـ ", numEl("num lv",Math.abs(dd).toFixed(2)+"$")); }
+    else { dr.classList.add("old"); dr.textContent=(c.side?(c.side==="above"?"▲ فوق السعر":"▼ تحت السعر")+" (عند الإعلان) · ":"")+"المسافة مخفية: السعر مش لايف"; }
+    d.append(dr);
+  }
+  // times
+  const tm=[], r=e&&LT[e.id];
+  if(c.decT) tm.push(`انعلن من ${ago(now-c.decT)} (${hmMs(c.decT)})`);
+  if(c.endT && cl.cat!=="ended") tm.push(c.endT>now?`بينتهي بعد ${ago(c.endT-now)}`:"وقته خلص");
+  if(c.decl && c.decl.length>1) tm.push("انعلن "+(c.decl.length===2?"مرتين":c.decl.length+" مرات")+": "+c.decl.slice().sort((a,b)=>(a.decT||0)-(b.decT||0)).map(x=>KIND[x.k]+(x.decT?" "+hmMs(x.decT):"")).join("، "));
+  if(e && STNOW[e.st] && r && r.stT){ tm.push(`${STNOW[e.st]} من ${ago(now-r.stT)}${r.stExact?"":" أو أكتر"}`);
+    if(r.firstT && r.stT-r.firstT>90000) tm.push(`بالبوت من ${ago(now-r.firstT)}${r.firstExact?"":" أو أكتر"}`); }
+  if(tm.length) d.append(el("div","lc-t",tm.join(" · ")));
+  // the bot line itself
+  if(e && e.st!=="gone"){
+    const m=[`خط ${e.id}`, e.src==="a"?"أوتو":"يدوي", `لوت ${e.lot}`, MODEN[e.m]||"", e.t?"دخول لمس":"إغلاق برّا", e.box?`بوكس ${e.box}`:""].filter(Boolean);
+    d.append(el("div","lc-m",m.join(" · ")));
+    if(e.how==="guess") d.append(el("div","lc-w","⚠️ مطابق بالتقريب (مش بنفس التقريب الحالي): مش أكيد إنه نفس الخط."));
+    const p=LN.pend[e.id];
+    if(p){ if(Number(p.lot)===Number(e.lot) && p.m===e.m && Number(p.t)===Number(e.t)) delete LN.pend[e.id];
+      else if(now-p.t0<180000) d.append(el("div","lc-w",`⏳ انبعت تغيير (لوت ${p.lot} · ${MODEN[p.m]} · ${p.t?"لمس":"إغلاق"}): بستنّى البوت يأكّد بالحالة.`));
+      else { d.append(el("div","lc-w",`⚠️ التغيير اللي انبعت (لوت ${p.lot}) لسا مش ظاهر بالحالة بعد 3 دقايق.`)); } }
+  }
+  cl.why.filter(Boolean).forEach(w=>d.append(el("div","lc-why",w)));
+  if(c.prev && c.prev.length) d.append(el("div","lc-t","قبل: "+c.prev.map(b=>`خط ${b.id} ${b.st==="used"?"انلمس"+(b.box?" (بوكس "+b.box+")":""):b.st==="gone"?"طلع":LST[b.st]||b.st}`).join("، ")));
+  if(cl.cat==="touched" && cl.box){ const b=cl.box, s=el("div","lc-box lv"); s.append(`بوكس ${b.id} · ${b.st==="in_trade"?"بصفقة هلأ":"مستني دخول"} · `, numEl("num "+sgn(b.pnl),money(b.pnl))); d.append(s); }
+  // actions valid for this state only, each with its exact command
+  const a=el("div","acts two"), cmds=[];
+  if(cl.cat==="notbot"){
+    const open=LN.open[c.key]==="add";
+    a.classList.remove("two"); a.style.gridTemplateColumns="1fr";
+    a.append(btn(open?"✕ سكّر":"▶️ فعّل بالبوت",()=>{ LN.open[c.key]=open?null:"add"; renderLines(); }, open?"":"primary"));
+    d.append(a); if(open) d.append(addForm(c)); return d;
+  }
+  if(live){
+    const cancel=`line cancel ${e.id}`;
+    if(e.st==="armed"){ const pz=`line pause ${e.id}`; a.append(btn("⏸ وقّف",()=>send(pz))); cmds.push(["وقّف",pz]); }
+    else{ const arm=`line arm ${e.id}`, w=[];
+      if(e.src==="a"){ if(!(S.settings||{}).auto_line) w.push("الأوتوبايلوت مطفي: البوت بيرفض يسلّح خط أوتو.");
+        else { const f=filterWhy(c.call||e.c); if(f.length) w.push("الأوتوبايلوت رح يرجع يوقفه خلال دقيقة لأن الفلتر ما بيسمح: "+f.join("، ")); } }
+      if(S.paused) w.push("البوت كله موقوف: الخط بيتسلّح بس ما بيتراقب لحد «كمّل».");
+      a.append(btn("▶️ فعّل",()=>ask({title:`فعّل خط ${e.id}`, body:`خط ${p2(e.px)} رح يرجع يستنّى لمس ويعمل بوكس (لوت ${e.lot}).`+(e.src==="a"?"":"\nخط يدوي: التسليح من جديد بيشيل وقت انتهاءه."), warn:w.join("\n"), cmd:arm}),"primary"));
+      cmds.push(["فعّل",arm]); }
+    a.append(btn("✖ الغي",()=>ask({title:`الغي خط ${e.id}`, body:`خط ${p2(e.px)} رح ينلغى وما بيرجع.`+(e.src==="a"&&c.kind==="scan"?"\nالأوتو ما بيرجع يسلّح نفس خط السكانر (بتقدر تفعّله بإيدك بعدين).":""), cmd:cancel}),"danger")); cmds.push(["الغي",cancel]);
+    const so=LN.open[c.key]==="set", sb=btn(so?"✕ سكّر الإعدادات":"⚙️ لوت وإعدادات هالخط",()=>{ LN.open[c.key]=so?null:"set"; renderLines(); });
+    sb.style.gridColumn="1 / -1"; a.append(sb);
+    d.append(a, cmdLine(cmds)); if(so) d.append(setForm(c)); return d;
+  }
+  if(cl.cat==="touched" && cl.box){ const b=btn(`📦 افتح بوكس ${cl.box.id} بالصفقات ←`,()=>gotoBox(cl.box.id)); a.classList.remove("two"); a.style.gridTemplateColumns="1fr"; a.append(b); d.append(a); }
+  return d;
 }
-function waitTile(x){
-  const t=el("div","ln"), hd=el("div","hd"), pw=el("div","pxw"), b=boardAt(x.px);
-  pw.append(el("div","dot sm "+(b?b.light||"none":"none")), numEl("px",p2(x.px)));
-  hd.append(pw, el("span","badge "+(x.st==="armed"?"on":"paused"), x.st==="armed"?"مسلّح ✓":(x.f?"موقوف (فلتر الأوتو)":"موقوف"))); t.append(hd);
-  t.append(el("div","dist",distText(x.px)));
-  const bg=lineBadges(x); bg.style.marginTop="6px"; t.append(bg);
-  t.append(el("div","meta",[`خط ${x.id}`, x.m==="r"?"رفض":"شمعة كاملة", x.t?"دخول لمس":"إغلاق برّا", `لوت ${x.lot}`].join(" · ")));
-  const a=el("div","acts two");
-  a.append(x.st==="armed" ? btn("⏸ وقّف",()=>send(`line pause ${x.id}`)) : btn("▶️ سلّح",()=>ask({title:`سلّح خط ${x.id}`,body:`خط ${p2(x.px)} رح يرجع يستنّى لمس ويفتح بوكس.`,cmd:`line arm ${x.id}`})));
-  a.append(btn("✖ الغي",()=>ask({title:`الغي خط ${x.id}`,body:`خط ${p2(x.px)} رح ينلغى وما بيرجع.`,cmd:`line cancel ${x.id}`}),"danger"));
-  t.append(a); return t;
-}
-function usedTile(x){
-  const t=el("div","ln used"), hd=el("div","hd"), pw=el("div","pxw");
-  pw.append(numEl("px",p2(x.px)), el("span","badge used", x.box?`✓ انلمس ← بوكس ${x.box}`:"✓ انلمس"));
-  const ob=S.boxes&&S.boxes.find(b=>b.id===x.box), h=lhAt(x.px), r=el("span","r lv");
-  if(ob) r.append(el("small","mut","مفتوح "), numEl("num "+sgn(ob.pnl), money(ob.pnl)));
-  else if(h&&h[4]!=null) r.append(el("small","mut","النتيجة "), numEl("num "+sgn(h[4]), money(h[4])));
-  else r.append(el("small","mut","مسكّر"));
-  hd.append(pw, r); t.append(hd);
-  const bg=lineBadges(x); bg.style.marginTop="6px"; bg.append(el("span","meta",`خط ${x.id} · لوت ${x.lot}`)); t.append(bg);
-  return t;
-}
-function deadTile(x){
-  const t=el("div","ln dead"), hd=el("div","hd"), pw=el("div","pxw");
-  pw.append(numEl("px",p2(x.px)), el("span","badge dead","⌛ "+(x.why||"خلص")));
-  hd.append(pw, el("span","meta", x.d?mdhmSrv(x.d):"")); t.append(hd);
-  const bg=lineBadges(x); bg.style.marginTop="6px"; t.append(bg); return t;
-}
+function distOf(c){ const bid=S&&S.bid; if(!bid) return 1e9; const e=c.ea, ref=e&&e.st!=="gone"?e.px:c.line; return Math.abs(ref-bid); }
+let lnLvl=null, lnT=0;
 function renderLines(){
-  const box=$("eaLines"), {wait,used,dead}=groups();
-  const na=wait.filter(x=>x.st==="armed").length, np=wait.length-na;
-  $("activeCount").textContent=S?`${na} مسلّح · ${np} موقوف · ${used.length} انلمس`:"";
-  const c=$("cLines"); c.hidden=!wait.length; c.textContent=wait.length;
-  box.textContent="";
-  if(!S){ box.append(el("p","empty","بستنّى حالة البوت…")); return; }
-  box.append(el("div","grp",`⏳ مستنيين لمس (${wait.length})`));
-  const w=el("div","lt"); wait.forEach(x=>w.append(waitTile(x))); if(!wait.length) w.append(el("p","empty","ما في خطوط مسلّحة.")); box.append(w);
-  if(used.length){ box.append(el("div","grp",`✓ انلمسوا وعملوا بوكس (${used.length})`)); const u=el("div","lt"); used.forEach(x=>u.append(usedTile(x))); box.append(u); }
-  if(dead.length){ box.append(el("div","grp",`⌛ خلصوا بدون بوكس (${dead.length})`)); const e=el("div","lt"); dead.forEach(x=>e.append(deadTile(x))); box.append(e); }
+  lnLvl=fresh().lvl; lnT=Date.now();
+  $("lnTz").textContent=tzLabel();
+  const {scan, manual}=buildCards(), all=scan.concat(manual);
+  all.forEach(c=>c.cl=classify(c));
+  const n={armed:0,paused:0,notbot:0,touched:0,ended:0}; all.forEach(c=>n[c.cl.cat]++);
+  const liveBot=S?(S.lines||[]).filter(x=>x.st==="armed"||x.st==="paused").length:0;
+  const cnt=$("cLines"); cnt.hidden=!liveBot; cnt.textContent=liveBot;
+  // summary bar: tap a number = filter
+  const sb=$("lnSum"); sb.textContent="";
+  [["armed","مسلّح","armed"],["paused","موقوف","inactive"],["notbot","مش بالبوت","inactive"],["touched","انلمس","touched"],["ended","خلص","ended"]].forEach(([k,t,f])=>{
+    const b=el("button","sm s-"+k); b.type="button"; b.append(el("b",null,String(n[k])), el("span",null,t)); b.onclick=()=>{ LN.filter=LN.filter===f?"all":f; lnSave(); renderLines(); }; sb.append(b); });
+  [...$("lnFilter").children].forEach(b=>b.setAttribute("aria-pressed", b.dataset.v===LN.filter?"true":"false"));
+  [...$("lnKind").children].forEach(b=>b.setAttribute("aria-pressed", b.dataset.v===LN.kind?"true":"false"));
+  const note=$("lnNote"), f=fresh(), ba=boardAge();
+  const notes=[];
+  if(!S) notes.push("بستنّى حالة البوت: حالة الخطوط بالبوت مش معروفة.");
+  else if(!usable()) notes.push(`⛔ حالة الخطوط من الساعة ${hmMs(stateT)} MT5 (قبل ${ago(f.age*1000)}): مش لايف، والمسافة مخفية.`);
+  if(ba!=null && ba>900) notes.push(`لوح السكانر عمره ${ago(ba*1000)}.`);
+  note.hidden=!notes.length; note.textContent=notes.join("\n");
+  const box=$("lnList"); box.textContent="";
+  if(!lastV2 && !S){ const s=el("section","card"); s.append(el("p","empty","بستنّى لوح السكانر وحالة البوت…")); box.append(s); return; }
+  const want=c=>LN.filter==="all" || (LN.filter==="armed"&&c.cl.cat==="armed") || (LN.filter==="inactive"&&(c.cl.cat==="notbot"||c.cl.cat==="paused"))
+    || (LN.filter==="touched"&&c.cl.cat==="touched") || (LN.filter==="ended"&&c.cl.cat==="ended");
+  const kindOk=c=>LN.kind==="all" || c.k===LN.kind;   // a line declared as main AND backup sits under main; the backup toggle shows it too
+  const groups=[["M","⭐ الرئيسي",scan.filter(c=>c.k==="M")],["B","الاحتياطي",scan.filter(c=>LN.kind==="B"?c.kinds.has("B"):c.k==="B")],["X","✋ خطوط يدوية / قديمة",manual.filter(kindOk)]];
+  let shown=0;
+  groups.forEach(([g,title,list])=>{
+    if(g!=="X" && LN.kind!=="all" && LN.kind!==g) return;
+    if(g==="X" && !list.length) return;
+    const sec=el("section","card"+(g==="M"?" gmain":"")), h=el("h2",null,title);
+    const act=list.filter(c=>c.cl.cat!=="ended"&&want(c)).sort((a,b)=>distOf(a)-distOf(b));
+    const end=list.filter(c=>c.cl.cat==="ended").sort((a,b)=>(b.decT||0)-(a.decT||0) || distOf(a)-distOf(b));
+    h.append(el("small",null,`${list.length} خط · ${list.filter(c=>c.cl.cat==="armed").length} مسلّح`), el("span","oldtag","قديم")); sec.append(h);
+    if(g==="X") sec.append(el("p","hint","خطوط بالبوت ما إلها خط سكانر على اللوح: خطوط يدوية، أو خطوط أقدم من آخر 10 خطوط عاللوح."));
+    const lt=el("div","lt"); act.forEach(c=>lt.append(lineCard(c))); sec.append(lt); shown+=act.length;
+    if(LN.filter==="ended"){ end.forEach(c=>lt.append(lineCard(c))); shown+=end.length; if(!end.length) lt.append(el("p","empty","ما في خطوط خلصت.")); }
+    else if(LN.filter==="all" && end.length){
+      const dt=el("details","endgrp"); dt.open=!!LN.endOpen[g]; dt.ontoggle=()=>{ LN.endOpen[g]=dt.open; };
+      dt.append(el("summary",null,`⌛ خلصوا (${end.length})`)); const e2=el("div","lt"); end.forEach(c=>e2.append(lineCard(c))); dt.append(e2); sec.append(dt);
+    }
+    if(!act.length && LN.filter!=="ended") lt.append(el("p","empty", !list.length ? (lastV2?"ما في خطوط هون على اللوح.":"بستنّى لوح السكانر…") : "ما في خطوط بهالفلتر."));
+    box.append(sec);
+  });
+  if(!shown && LN.filter!=="all"){ const p=el("p","hint","الفلتر: "+({armed:"المسلّح",inactive:"مش مفعّل",touched:"انلمس",ended:"خلص"}[LN.filter]||"")+". اكبس «الكل» عشان تشوف كل شي."); p.style.textAlign="center"; box.append(p); }
 }
+$("lnFilter").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; LN.filter=b.dataset.v; lnSave(); renderLines(); };
+$("lnKind").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; LN.kind=b.dataset.v; lnSave(); renderLines(); };
+function lineCmd(px){ return `line ${px} lot ${form.lot} ${form.mode} ${form.entry} gameoff`; }
 function renderLineLog(){
   const box=$("lineLog"); $("logTz").textContent="الأحدث فوق · "+tzLabel();
   if(!S||!S.lh) return; box.textContent="";
@@ -931,7 +1194,7 @@ function editor(b, kind){
 }
 function boxCard(b){
   const ok=usable(), bid=ok?S.bid:null, inT=b.st==="in_trade";
-  const d=el("div","bx "+(b.pnl>0?"p":b.pnl<0?"n":""));
+  const d=el("div","bx "+(b.pnl>0?"p":b.pnl<0?"n":"")); d.id="box-"+b.id;
   const hd=el("div","hd"), l=el("div");
   const tl=el("div","badges"); tl.append(el("span","id",`بوكس ${b.id}`), el("span","badge "+(inT?"on":"paused"), inT?"بصفقة هلأ":"مستني دخول"));
   const sub=el("div","badges"); sub.style.marginTop="4px";
@@ -1119,9 +1382,10 @@ document.querySelectorAll("[data-send]").forEach(b=>b.onclick=()=>{ const c=b.da
   else send(c); });
 
 /* ================= render all ================= */
-function renderAll(){ renderBanner(); renderAck(); renderStatus(); renderMarket(); renderBoard(); renderLines(); renderLineLog(); renderBoxes(); renderSettings();
+function renderAll(){ renderBanner(); renderAck(); renderStatus(); renderMarket(); renderLines(); renderLineLog(); renderBoxes(); renderSettings();
   $("tzNote").textContent="الأوقات بالخطوط والسوق: "+tzLabel()+(S&&Number.isFinite(S.so)?"":" (مفترض، الجسر ما بيبعت فرق التوقيت)")+". الأخبار بتوقيت التلفون."; }
-function renderTick(){ renderBanner(); renderAck(); renderStatus(); renderMarket(); }
+function renderTick(){ renderBanner(); renderAck(); renderStatus(); renderMarket();
+  if(fresh().lvl!==lnLvl || Date.now()-lnT>30000) renderLines(); }   // ages tick, the distance hides as soon as the data goes old
 
 /* ================= messages ================= */
 function takeState(m){
@@ -1130,6 +1394,7 @@ function takeState(m){
     S=s; stateT=t;
     if(prevBid===null || Number(s.bid)!==prevBid){ prevBid=Number(s.bid); bidT=t; }
     boardFromState(s.b2);
+    trackLines(s,t);
     return true; }catch(e){ return false; }
 }
 function onMsg(m, bulk){
@@ -1162,7 +1427,7 @@ async function connectV2(){
   const take=m=>{ if(m&&m.event==="message"){ try{ const st=JSON.parse(m.message); if(!lastV2 || (st.ts_utc||"")>=(lastV2.ts_utc||"")) lastV2=st; }catch(e){} } };
   await poll(cfg.v, "2h", take); renderAll();
   if(es2) es2.close();
-  es2=new EventSource(`${NTFY}/${cfg.v}/sse`); es2.onmessage=e=>{ try{ take(JSON.parse(e.data)); }catch(x){ return; } renderMarket(); renderBoard(); renderLines(); };
+  es2=new EventSource(`${NTFY}/${cfg.v}/sse`); es2.onmessage=e=>{ try{ take(JSON.parse(e.data)); }catch(x){ return; } renderMarket(); renderLines(); };
 }
 // iOS freezes background pages: when the app comes back, fetch what was missed and reopen the streams.
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible" && cfg){ renderTick(); connect(); connectV2(); } });
